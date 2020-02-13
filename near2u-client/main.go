@@ -16,8 +16,8 @@ func main() {
 
 	gui.InitWindow()
 
-	client.Conn = client.SocketConnect(ip, port)
-	defer client.Conn.Close()
+	client.SocketConnect(ip, port)
+	defer client.GetConnection().Close()
 
 	qt.QApplication_Exec()
 
