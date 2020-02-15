@@ -9,6 +9,17 @@ import (
 
 var conn net.Conn
 
+type Client struct {
+	ClientID string
+	Conn net.Conn
+	Token string
+}
+
+type RequestParams struct {
+	Function string `json:function`
+	Auth string `json:auth`
+}
+
 // TODO Remove (?)
 const StopCharacter = "\r\n\r\n"
 
@@ -37,29 +48,28 @@ func SocketConnect(ip string, port int) {
 	check(err, "Connection Failed")
 }
 
-// socketSend sends string on socket connection
-func SocketSend(conn net.Conn, function string, data string, auth string) string {
+// socketSend sends JSON on socket connection, accepts marshaled JSON
+func SocketSend(conn net.Conn, jsonReq []byte) {
 
-	msg := fmt.Sprintf("function:%s data:%s auth:%s%s", function, data, auth, StopCharacter)
-	_, err := conn.Write([]byte(msg))
-	log.Printf("Sending: %s", msg)
+	_, err := conn.Write(jsonReq)
+	log.Printf("Sending: %s", string(jsonReq))
 
 	check(err, "Couldn't send data")
 }
 
-func SocketReceive(conn net.Conn, rx chan string) {
+func SocketReceive(conn net.Conn, rx chan []byte) {
 	buff := make([]byte, 8192) // Buffered reads from socket
 
 	for {
 		n, err := conn.Read(buff)
 		if err != nil && err.Error() == "EOF" {
 			log.Println("EOF Reached, breaking loop")
-			rx <- "EOF"
+			rx <- []byte("EOF")
 			break
 		}
 		check(err, "Error receiving data")
 		log.Printf("Receive: %s\n", buff[:n])
-		rx  <- string(buff[:n])
+		rx  <- buff[:n]
 		log.Printf("Channel content: %s\n", <- rx)
 	}
 }

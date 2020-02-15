@@ -2,40 +2,56 @@ package client
 
 import (
 	"../utils"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"encoding/json"
 	"net"
 	"strconv"
 )
 
-
 type Sensor struct {
-	ID string
-	Name string
-	Measurement float32
+	ID string `json:ID`
+	Name string `json:name`
+	Measurement float32 `json:measurement`
 }
 
 type Environment struct {
-	ID string
-	sensorMap map[string]Sensor
+	ID string `json:ID`
+	SensorMap map[string]Sensor `json:sensors`
 }
 
-var (
-	function string
-	data string
-	auth string
-)
+type SelEnvRequest struct {
+	EnvID string `json:"env"`
+	utils.RequestParams `json:"params"`
+}
+
+// TODO Create Client struct
+
 
 // Gets an array of Environment IDs from the server, to be displayed on the GUI for selection
 func GetEnvList(conn net.Conn) []string {
-/*
-	function = "getEnvList"
-	data = ""
-	auth = "a"
 
-	socketSend(conn, function, data, auth)
-	SocketReceive(conn)
-*/
-	//return strings.Split(<- Socket, ";")
+	/*
+	// TODO use client token
+	request := utils.RequestParams {
+		"getEnvList",
+		"auth",
+	}
+
+	jsonReq, _ := json.Marshal(request)
+
+	utils.SocketSend(conn, jsonReq)
+
+	rx := make(chan []byte)
+	utils.SocketReceive(conn, rx)
+
+	// TODO Take environment list accessing the json
+	var envList struct {
+		Environments [] string `json:"environments"`
+	}
+	json.Unmarshal(<- rx, &envList)
+	log.Println(envList.Environments)
+
+	 */
+
 	// TODO Delete test string
 	var test = make([]string, 10)
 	for i := 0; i < 10; i++ {
@@ -45,17 +61,31 @@ func GetEnvList(conn net.Conn) []string {
 }
 
 func getSensorData() {
-	// Subscribe to MQTT
+	// TODO Subscribe to MQTT
 }
 
-func selectEnv(conn net.Conn, rx chan string, envID string) {
+func SelectEnv(conn net.Conn, rx chan []byte, envID string) {
 
-	function = "selectEnvironment"
-	data = envID
+	params := utils.RequestParams {
+		"getEnvList",
+		"auth",
+	}
 
-	utils.SocketSend(conn, function, data, auth)
+	// TODO Make normal struct
+	request := struct {
+		utils.RequestParams
+		string `json:"envID"`
+	}{
+		params,
+		envID,
+	}
+
+	jsonReq, _ := json.Marshal(request)
+
+	utils.SocketSend(conn, jsonReq)
+	//rx := make(chan [] byte)
 	// Returns sensor list
-	utils.SocketReceive(conn, rx)
+	//utils.SocketReceive(conn, rx)
 
 	// receivedData := <- rx
 

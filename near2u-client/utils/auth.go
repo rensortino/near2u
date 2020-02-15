@@ -7,62 +7,89 @@ import (
 	"regexp"
 )
 
-// User represents authentication data
-type User struct {
-	Name string
-	Surname string
-	Email    string
-	Password string
+type LoginData struct {
+	Email    string `json:email`
+	Password string `json:password`
 }
 
-var (
-	function string
-	data string
-	auth string
-)
+// User represents authentication data
+type User struct {
+	Name string `json:name`
+	Surname string `json:surname`
+	LoginData `json:"login"`
+}
 
-func Register(rx chan string, name string, surname string, email string, password string)  {
+type RegisterRequest struct {
+	RequestParams
+	User
+}
 
-	newUser := &User{}
-	newUser.Name = name
-	newUser.Surname = surname
-	newUser.Email = email
-	newUser.Password = password
+type LoginRequest struct {
+	RequestParams
+	LoginData
+}
 
-	// Converts the structure into JSON format
-	req, _ := json.Marshal(newUser)
+func Register(rx chan []byte, name string, surname string, email string, password string)  {
 
-	function = "register"
-	data = string(req)
+	loginData := LoginData {
+		email,
+		password,
+	}
 
-	SocketSend(conn, function, data, auth)
+	newUser := User{
+		name,
+		surname,
+		loginData,
+	}
+
+	params := RequestParams {
+		"register",
+		"",
+	}
+
+	req := RegisterRequest {
+		params,
+		newUser,
+	}
+
+	jsonReq, err := json.Marshal(req)
+	check(err, "Marshalling Error")
+	SocketSend(conn, jsonReq)
 	SocketReceive(conn, rx)
 }
 
 func Login(conn net.Conn, email string, password string) bool {
 
-	userLogin := &User{}
-	userLogin.Email = email
-	userLogin.Password = password
+	login := LoginData {
+		email,
+		password,
+	}
 
-	req, _ := json.Marshal(userLogin)
+	params := RequestParams {
+		"login",
+		"",
+	}
 
-	function = "login"
-	data = string(req)
+	loginReq := LoginRequest {
+		params,
+		login,
+	}
 
-	SocketSend(conn, function, data, auth)
-	rx := make(chan string)
+	jsonReq, err := json.Marshal(loginReq)
+	check(err, "Marshalling Error")
+	SocketSend(conn, jsonReq)
+	rx := make(chan []byte)
 	SocketReceive(conn, rx)
 	// TODO Change test string
-	rx <- "0CC0FA6935783505506B0E3B81A566E1B9A7FEBA" // Test SHA1 string
+	rx <- []byte("0CC0FA6935783505506B0E3B81A566E1B9A7FEBA") // Test SHA1 string
 	var token string
-	token = <- rx
+	token = string(<- rx)
 
 	// Checks if token matches the SHA1 format
 	isHash, _ := regexp.MatchString("\b[0-9a-f]{5,40}\b", token)
 
 	if isHash {
-		auth = token
+		auth := token
 		log.Println("Token: " + auth)
 		return true
 	}

@@ -2,12 +2,16 @@ package gui
 
 import (
 	"../client"
+	"../utils"
 	qtcore "github.com/therecipe/qt/core"
 	qtgui "github.com/therecipe/qt/gui"
 	qt "github.com/therecipe/qt/widgets"
 	"log"
 	"os"
 )
+
+// TODO Add back buttons
+// TODO Implement Select Environment button
 
 var (
 	mainWindow * qt.QMainWindow
@@ -55,14 +59,16 @@ func getSelectEnvWidget() * qt.QWidget {
 	widget := qt.NewQWidget(nil, 0)
 	widget.SetLayout(layout)
 	envList := qt.NewQComboBox(nil)
-	envList.AddItems(client.GetEnvList(client.GetConnection()))
+	envList.AddItems(client.GetEnvList(utils.GetConnection()))
 	envList.SetEditable(false)
 	layout.AddWidget(envList, 0, 0)
 
 	selEnvBtn := qt.NewQPushButton2("Select", nil)
 	selEnvBtn.ConnectClicked(func (checked bool) {
-		widget.Destroy(true,  true)
 		log.Printf("Selected: %s", envList.CurrentText())
+		rx := make(chan [] byte)
+		client.SelectEnv(utils.GetConnection(), rx, envList.CurrentText())
+		changeWindow(widget, getHomepageWidget())
 	})
 	layout.AddWidget(selEnvBtn, 0, 0)
 
@@ -100,12 +106,12 @@ func getRegisterWidget() * qt.QWidget{
 
 	registerBtn := qt.NewQPushButton2("Register", nil)
 	registerBtn.ConnectClicked(func(checked bool) {
-		if client.GetConnection() != nil {
+		if utils.GetConnection() != nil {
 			// TODO Email field validation check
-			rx := make(chan string)
-			go client.Register(rx, name.Text(), surname.Text(), email.Text(), password.Text())
+			rx := make(chan []byte)
+			go utils.Register(rx, name.Text(), surname.Text(), email.Text(), password.Text())
 			// TODO Verify server response correctness
-			qt.QMessageBox_Information(nil, "OK", <- rx, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+			qt.QMessageBox_Information(nil, "OK", string(<- rx), qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 			changeWindow(widget, getHomepageWidget())
 		} else {
 			qt.QMessageBox_Information(nil, "Error", "Server not reachable", qt.QMessageBox__Ok, qt.QMessageBox__Ok)
@@ -136,8 +142,8 @@ func getLoginWidget() * qt.QWidget{
 	button := qt.NewQPushButton2("Log In", nil)
 	button.ConnectClicked(func(checked bool) {
 		// TODO Fields validity check
-		if client.GetConnection() != nil {
-			go client.Login(client.GetConnection(), email.Text(), password.Text())
+		if utils.GetConnection() != nil {
+			go utils.Login(utils.GetConnection(), email.Text(), password.Text())
 			changeWindow(widget, getHomepageWidget())
 		}
 	})

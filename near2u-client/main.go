@@ -1,8 +1,8 @@
 package main
 
 import (
-	"./client"
 	"./gui"
+	"./utils"
 	qt "github.com/therecipe/qt/widgets"
 )
 
@@ -16,8 +16,8 @@ func main() {
 
 	gui.InitWindow()
 
-	client.SocketConnect(ip, port)
-	defer client.GetConnection().Close()
+	utils.SocketConnect(ip, port)
+	defer utils.GetConnection().Close()
 
 	qt.QApplication_Exec()
 
