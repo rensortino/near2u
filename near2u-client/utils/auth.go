@@ -3,43 +3,32 @@ package utils
 import (
 	"encoding/json"
 	"log"
-	"net"
 	"regexp"
 )
 
-type LoginData struct {
+// TODO Remove nested struct
+type loginData struct {
 	Email    string `json:email`
 	Password string `json:password`
 }
 
-// User represents authentication data
-type User struct {
-	Name string `json:name`
-	Surname string `json:surname`
-	LoginData `json:"login"`
+type user struct {
+	Name      string `json:name`
+	Surname   string `json:surname`
+	LoginData loginData `json:"login"`
 }
 
-type RegisterRequest struct {
-	RequestParams
-	User
-}
+func (c * Client) Register(rx chan []byte, name string, surname string, email string, password string)  {
 
-type LoginRequest struct {
-	RequestParams
-	LoginData
-}
-
-func Register(rx chan []byte, name string, surname string, email string, password string)  {
-
-	loginData := LoginData {
+	login := loginData{
 		email,
 		password,
 	}
 
-	newUser := User{
+	newUser := user{
 		name,
 		surname,
-		loginData,
+		login,
 	}
 
 	params := RequestParams {
@@ -47,20 +36,23 @@ func Register(rx chan []byte, name string, surname string, email string, passwor
 		"",
 	}
 
-	req := RegisterRequest {
+	req := struct {
+		Params  RequestParams `json:"params"`
+		NewUser user          `json:"new_user"`
+	} {
 		params,
 		newUser,
 	}
 
 	jsonReq, err := json.Marshal(req)
 	check(err, "Marshalling Error")
-	SocketSend(conn, jsonReq)
-	SocketReceive(conn, rx)
+	c.SocketSend(jsonReq)
+	c.SocketReceive(rx)
 }
 
-func Login(conn net.Conn, email string, password string) bool {
+func (c * Client) Login(email string, password string) bool {
 
-	login := LoginData {
+	login := loginData{
 		email,
 		password,
 	}
@@ -70,16 +62,19 @@ func Login(conn net.Conn, email string, password string) bool {
 		"",
 	}
 
-	loginReq := LoginRequest {
+	req := struct {
+		Params RequestParams `json:"params"`
+		Login  loginData     `json:"login"`
+	} {
 		params,
 		login,
 	}
 
-	jsonReq, err := json.Marshal(loginReq)
+	jsonReq, err := json.Marshal(req)
 	check(err, "Marshalling Error")
-	SocketSend(conn, jsonReq)
+	c.SocketSend(jsonReq)
 	rx := make(chan []byte)
-	SocketReceive(conn, rx)
+	c.SocketReceive(rx)
 	// TODO Change test string
 	rx <- []byte("0CC0FA6935783505506B0E3B81A566E1B9A7FEBA") // Test SHA1 string
 	var token string
@@ -89,8 +84,8 @@ func Login(conn net.Conn, email string, password string) bool {
 	isHash, _ := regexp.MatchString("\b[0-9a-f]{5,40}\b", token)
 
 	if isHash {
-		auth := token
-		log.Println("Token: " + auth)
+		c.Token = token
+		log.Println("Token: " + token)
 		return true
 	}
 	return false

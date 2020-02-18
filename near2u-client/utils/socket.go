@@ -7,11 +7,12 @@ import (
 	"strings"
 )
 
-var conn net.Conn
+var ClientInstance * Client
 
+// TODO Convert in Session interface
 type Client struct {
 	ClientID string
-	Conn net.Conn
+	conn net.Conn
 	Token string
 }
 
@@ -20,9 +21,6 @@ type RequestParams struct {
 	Auth string `json:auth`
 }
 
-// TODO Remove (?)
-const StopCharacter = "\r\n\r\n"
-
 func check(err error, msg string) {
 	if err != nil {
 		log.Println(msg)
@@ -30,38 +28,40 @@ func check(err error, msg string) {
 	}
 }
 
-func GetConnection() net.Conn {
-	return conn
+// TODO make methods private
+
+func (c * Client) GetConnection() net.Conn {
+	return c.conn
 }
 
-func SetConnection(newConnection net.Conn) {
-	conn = newConnection
+func (c * Client) SetConnection(newConnection net.Conn) {
+	c.conn = newConnection
 }
 
 // SocketConnect binds to a remote socket
-func SocketConnect(ip string, port int) {
+func (c * Client) SocketConnect(ip string, port int) {
 	addr := strings.Join([]string{ip, strconv.Itoa(port)}, ":")
 	conn, err := net.Dial("tcp", addr)
 
-	SetConnection(conn)
+	c.SetConnection(conn)
 
 	check(err, "Connection Failed")
 }
 
 // socketSend sends JSON on socket connection, accepts marshaled JSON
-func SocketSend(conn net.Conn, jsonReq []byte) {
+func (c * Client) SocketSend(jsonReq []byte) {
 
-	_, err := conn.Write(jsonReq)
+	_, err := c.conn.Write(jsonReq)
 	log.Printf("Sending: %s", string(jsonReq))
 
 	check(err, "Couldn't send data")
 }
 
-func SocketReceive(conn net.Conn, rx chan []byte) {
+func (c * Client) SocketReceive(rx chan []byte) {
 	buff := make([]byte, 8192) // Buffered reads from socket
 
 	for {
-		n, err := conn.Read(buff)
+		n, err := c.conn.Read(buff)
 		if err != nil && err.Error() == "EOF" {
 			log.Println("EOF Reached, breaking loop")
 			rx <- []byte("EOF")

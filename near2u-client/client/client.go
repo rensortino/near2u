@@ -3,9 +3,13 @@ package client
 import (
 	"../utils"
 	"encoding/json"
-	"net"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"log"
+	"net/url"
 	"strconv"
 )
+
+// TODO Create Client struct to contain session data and client data (See TODO on socket.go)
 
 type Sensor struct {
 	ID string `json:ID`
@@ -18,30 +22,23 @@ type Environment struct {
 	SensorMap map[string]Sensor `json:sensors`
 }
 
-type SelEnvRequest struct {
-	EnvID string `json:"env"`
-	utils.RequestParams `json:"params"`
-}
-
-// TODO Create Client struct
-
+// TODO Add Client interface (?)
 
 // Gets an array of Environment IDs from the server, to be displayed on the GUI for selection
-func GetEnvList(conn net.Conn) []string {
+func GetEnvList(c * utils.Client) []string {
 
 	/*
-	// TODO use client token
 	request := utils.RequestParams {
 		"getEnvList",
-		"auth",
+		c.Token,
 	}
 
 	jsonReq, _ := json.Marshal(request)
 
-	utils.SocketSend(conn, jsonReq)
+	c.SocketSend(conn, jsonReq)
 
 	rx := make(chan []byte)
-	utils.SocketReceive(conn, rx)
+	c.SocketReceive(rx)
 
 	// TODO Take environment list accessing the json
 	var envList struct {
@@ -60,39 +57,72 @@ func GetEnvList(conn net.Conn) []string {
 	return test
 }
 
-func getSensorData() {
-	// TODO Subscribe to MQTT
+func getSensorData(c * utils.Client, uri *url.URL, topic string) {
+
+	client := utils.Connect(c.ClientID, uri)
+	client.Subscribe(topic, 0, func(client mqtt.Client, msg mqtt.Message) {
+
+		// TODO Substitute with map[string]interface{}
+		sensors := make(map[string]Sensor)
+		env := Environment{SensorMap:sensors}
+
+		/*
+			 Payload format:
+			{"ID":"env1","SensorMap":{
+				"sensor1":{"ID":"id","Name":"name","Measurement":7.4 },
+				"sensor2":{"ID":"otherID","Name":"name2","Measurement":4.76}
+			}}
+		*/
+		json.Unmarshal(msg.Payload(), &env)
+		log.Println("Received sensor map: ")
+		log.Println(env.SensorMap)
+		log.Println("Payload: " + string(msg.Payload()))
+	})
 }
 
-func SelectEnv(conn net.Conn, rx chan []byte, envID string) {
+func SelectEnv(c * utils.Client, rx chan []byte, envName string) {
 
 	params := utils.RequestParams {
-		"getEnvList",
-		"auth",
+		Function: "selectEnv",
+		Auth:     c.Token,
 	}
 
-	// TODO Make normal struct
 	request := struct {
-		utils.RequestParams
-		string `json:"envID"`
+		Params utils.RequestParams `json:"params"`
+		EnvName string `json:"envName"`
 	}{
 		params,
-		envID,
+		envName,
 	}
 
 	jsonReq, _ := json.Marshal(request)
 
-	utils.SocketSend(conn, jsonReq)
-	//rx := make(chan [] byte)
-	// Returns sensor list
-	//utils.SocketReceive(conn, rx)
+	c.SocketSend(jsonReq)
 
-	// receivedData := <- rx
+	//Returns broker's address
+	c.SocketReceive(rx)
 
-	// TODO Define sensor map, {sensorID, measurement}
-	// Map needed to update values coming from MQTT broker directly using ID
-	// e.g. sensorMap[ID] = sensorData
-	// sensorMap = Json.Decode(receivedData)["data"]
-	// return sensorList
+	var res = struct {
+		Address string `json:"address"`
+		Topic string `json:"topic"`
+	}{}
+
+	json.Unmarshal(<- rx, &res)
+
+	uri, err := url.Parse(res.Address)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	go getSensorData(c, uri, res.Topic)
+
+
+	/*
+	// TODO Define sensor map, {sensorID, measurement} (?)
+	 Map needed to update values coming from MQTT broker directly using ID
+	 e.g. sensorMap[ID] = sensorData
+	 sensorMap = Json.Decode(receivedData)["data"]
+	 return sensorList
+	 */
 
 }

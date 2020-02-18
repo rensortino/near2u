@@ -16,8 +16,8 @@ func main() {
 
 	gui.InitWindow()
 
-	utils.SocketConnect(ip, port)
-	defer utils.GetConnection().Close()
+	utils.ClientInstance.SocketConnect(ip, port)
+	defer utils.ClientInstance.GetConnection().Close()
 
 	qt.QApplication_Exec()
 

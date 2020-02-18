@@ -11,7 +11,6 @@ import (
 )
 
 // TODO Add back buttons
-// TODO Implement Select Environment button
 
 var (
 	mainWindow * qt.QMainWindow
@@ -45,6 +44,9 @@ func getHomepageWidget() * qt.QWidget{
 
 	selEnvBtn := qt.NewQPushButton2("Select Environment", nil)
 	selEnvBtn.ConnectClicked(func (checked bool) {
+		rx := make(chan [] byte)
+		go client.SelectEnv(utils.ClientInstance, rx, "env1")
+		log.Println("Received data in GUI:  " + string(<- rx))
 		changeWindow(widget, getSelectEnvWidget())
 	})
 	layout.AddWidget(selEnvBtn, 0, 0)
@@ -59,7 +61,7 @@ func getSelectEnvWidget() * qt.QWidget {
 	widget := qt.NewQWidget(nil, 0)
 	widget.SetLayout(layout)
 	envList := qt.NewQComboBox(nil)
-	envList.AddItems(client.GetEnvList(utils.GetConnection()))
+	envList.AddItems(client.GetEnvList(utils.ClientInstance))
 	envList.SetEditable(false)
 	layout.AddWidget(envList, 0, 0)
 
@@ -67,7 +69,7 @@ func getSelectEnvWidget() * qt.QWidget {
 	selEnvBtn.ConnectClicked(func (checked bool) {
 		log.Printf("Selected: %s", envList.CurrentText())
 		rx := make(chan [] byte)
-		client.SelectEnv(utils.GetConnection(), rx, envList.CurrentText())
+		client.SelectEnv(utils.ClientInstance, rx, envList.CurrentText())
 		changeWindow(widget, getHomepageWidget())
 	})
 	layout.AddWidget(selEnvBtn, 0, 0)
@@ -106,10 +108,10 @@ func getRegisterWidget() * qt.QWidget{
 
 	registerBtn := qt.NewQPushButton2("Register", nil)
 	registerBtn.ConnectClicked(func(checked bool) {
-		if utils.GetConnection() != nil {
+		if utils.ClientInstance.GetConnection() != nil {
 			// TODO Email field validation check
 			rx := make(chan []byte)
-			go utils.Register(rx, name.Text(), surname.Text(), email.Text(), password.Text())
+			go utils.ClientInstance.Register(rx, name.Text(), surname.Text(), email.Text(), password.Text())
 			// TODO Verify server response correctness
 			qt.QMessageBox_Information(nil, "OK", string(<- rx), qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 			changeWindow(widget, getHomepageWidget())
@@ -142,8 +144,8 @@ func getLoginWidget() * qt.QWidget{
 	button := qt.NewQPushButton2("Log In", nil)
 	button.ConnectClicked(func(checked bool) {
 		// TODO Fields validity check
-		if utils.GetConnection() != nil {
-			go utils.Login(utils.GetConnection(), email.Text(), password.Text())
+		if utils.ClientInstance.GetConnection() != nil {
+			go utils.ClientInstance.Login(email.Text(), password.Text())
 			changeWindow(widget, getHomepageWidget())
 		}
 	})
