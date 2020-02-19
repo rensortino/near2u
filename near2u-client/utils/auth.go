@@ -3,44 +3,36 @@ package utils
 import (
 	"encoding/json"
 	"log"
-	"regexp"
+	//"regexp"
 )
 
 // TODO Remove nested struct
 type loginData struct {
-	Email    string `json:email`
-	Password string `json:password`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-type user struct {
-	Name      string `json:name`
-	Surname   string `json:surname`
-	LoginData loginData `json:"login"`
+type user_register struct {
+	Name      string `json:"name"`
+	Surname   string `json:"surname"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func (c * Client) Register(rx chan []byte, name string, surname string, email string, password string)  {
 
-	login := loginData{
+	newUser := user_register{
+		name,
+		surname,
 		email,
 		password,
 	}
 
-	newUser := user{
-		name,
-		surname,
-		login,
-	}
-
-	params := RequestParams {
-		"register",
-		"",
-	}
-
 	req := struct {
-		Params  RequestParams `json:"params"`
-		NewUser user          `json:"new_user"`
+		Function string `json:"function"`
+		NewUser user_register     `json:"data"`
 	} {
-		params,
+		"register",
 		newUser,
 	}
 
@@ -57,16 +49,11 @@ func (c * Client) Login(email string, password string) bool {
 		password,
 	}
 
-	params := RequestParams {
-		"login",
-		"",
-	}
-
 	req := struct {
-		Params RequestParams `json:"params"`
-		Login  loginData     `json:"login"`
+		Function string `json:"function"`
+		Login  loginData     `json:"data"`
 	} {
-		params,
+		"login",
 		login,
 	}
 
@@ -74,13 +61,27 @@ func (c * Client) Login(email string, password string) bool {
 	check(err, "Marshalling Error")
 	c.SocketSend(jsonReq)
 	rx := make(chan []byte)
-	c.SocketReceive(rx)
+	go c.SocketReceive(rx)
 	// TODO Change test string
-	rx <- []byte("0CC0FA6935783505506B0E3B81A566E1B9A7FEBA") // Test SHA1 string
-	var token string
-	token = string(<- rx)
+	//rx <- []byte("0CC0FA6935783505506B0E3B81A566E1B9A7FEBA") // Test SHA1 string
+	var res = struct {
+		Status string `json:"Status"`
+		Message string `json:"message"`
+	}{}
+	json.Unmarshal(<- rx,&res)
+	log.Println(res.Status)
+	if (res.Status == "Succesfull"){
+		c.Token = res.Message
+		log.Println(c.Token)
+	} else
+		{
+			// da mettere nella gui il messaggio di errore 
+			log.Println("error")
+			c.Token = ""
+		}
 
 	// Checks if token matches the SHA1 format
+	/*
 	isHash, _ := regexp.MatchString("\b[0-9a-f]{5,40}\b", token)
 
 	if isHash {
@@ -88,5 +89,6 @@ func (c * Client) Login(email string, password string) bool {
 		log.Println("Token: " + token)
 		return true
 	}
+	*/
 	return false
 }

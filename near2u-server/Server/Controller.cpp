@@ -34,16 +34,12 @@ namespace Server
 		res = MYSQL::Select_Query(query);
 		if( res->rowsCount() == 0){
             response["Status"] = "Failed";
-            response["error"] = "No user found please check credentials";
-        }
-		if( res->rowsCount() > 1){
-            response["Status"] = "Failed";
-            response["error"] = "Ambiguity in User registration";
+            response["message"] = "No user found please check credentials";
         }
 		else {
             while (res->next()) {
                 std::cout << ", auth_token = '" << res->getString("auth_token") << "'" << std::endl;
-                response["auth"] = (std::string) res->getString("auth_token");
+                response["message"] = (std::string) res->getString("auth_token");
 				User user((std::string) res->getString("name"),(std::string) res->getString("surname"),(std::string) res->getString("email"),(std::string) res->getString("auth_token"));
 				Controller::users.push_back(user);
             }

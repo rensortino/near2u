@@ -43,7 +43,7 @@ namespace MYSQL{
                 std::cout << ", SQLState: " << e.getSQLState() << " )" << std::endl;
 
                 response["Status"] = "Error";
-                response["error"] = e.what();
+                response["message"] = e.what();
 
                 return response;
             }

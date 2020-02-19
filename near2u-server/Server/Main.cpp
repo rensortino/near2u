@@ -5,18 +5,20 @@
 #include <netinet/in.h> 
 #include <stdio.h> 
 #include <string.h>
-
+#include <fcntl.h> 
+#include<pthread.h>
 
 
 #define HOST "localhost"
 #define USER "admin"
 #define PASS "admin"
 #define DB "apl_project"
-#define PORT 8080 
+#define PORT 3333 
 
 
 
 using namespace Server;
+
 
 
 int main(){
@@ -57,7 +59,7 @@ int main(){
         perror("bind failed"); 
         exit(EXIT_FAILURE); 
     } 
-    while(1){
+    
         if (listen(server_fd, 3) < 0) 
         { 
             perror("listen"); 
@@ -69,7 +71,7 @@ int main(){
             perror("accept"); 
             exit(EXIT_FAILURE); 
         } 
-        
+    while(1){   
         valread = read( new_socket , buffer, 8192); 
         reader.parse(buffer, request);
         std::cout << "new request arrived requesting API: " + request["function"].asString() <<std::endl;

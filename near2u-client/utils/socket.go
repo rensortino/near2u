@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+var (
+	ip   = "127.0.0.1"
+	port = 3333
+)
+
 var ClientInstance * Client
 
 // TODO Convert in Session interface
@@ -17,8 +22,8 @@ type Client struct {
 }
 
 type RequestParams struct {
-	Function string `json:function`
-	Auth string `json:auth`
+	Function string `json:"function"`
+	Auth string `json:"auth"`
 }
 
 func check(err error, msg string) {
@@ -50,7 +55,8 @@ func (c * Client) SocketConnect(ip string, port int) {
 
 // socketSend sends JSON on socket connection, accepts marshaled JSON
 func (c * Client) SocketSend(jsonReq []byte) {
-
+	c.SocketConnect(ip, port)
+	
 	_, err := c.conn.Write(jsonReq)
 	log.Printf("Sending: %s", string(jsonReq))
 
@@ -59,7 +65,7 @@ func (c * Client) SocketSend(jsonReq []byte) {
 
 func (c * Client) SocketReceive(rx chan []byte) {
 	buff := make([]byte, 8192) // Buffered reads from socket
-
+	defer c.GetConnection().Close()
 	for {
 		n, err := c.conn.Read(buff)
 		if err != nil && err.Error() == "EOF" {

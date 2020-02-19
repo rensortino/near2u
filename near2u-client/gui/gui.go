@@ -108,16 +108,13 @@ func getRegisterWidget() * qt.QWidget{
 
 	registerBtn := qt.NewQPushButton2("Register", nil)
 	registerBtn.ConnectClicked(func(checked bool) {
-		if utils.ClientInstance.GetConnection() != nil {
 			// TODO Email field validation check
 			rx := make(chan []byte)
 			go utils.ClientInstance.Register(rx, name.Text(), surname.Text(), email.Text(), password.Text())
 			// TODO Verify server response correctness
 			qt.QMessageBox_Information(nil, "OK", string(<- rx), qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 			changeWindow(widget, getHomepageWidget())
-		} else {
-			qt.QMessageBox_Information(nil, "Error", "Server not reachable", qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-		}
+
 	})
 	layout.AddWidget(registerBtn, 0, 0)
 
@@ -144,10 +141,10 @@ func getLoginWidget() * qt.QWidget{
 	button := qt.NewQPushButton2("Log In", nil)
 	button.ConnectClicked(func(checked bool) {
 		// TODO Fields validity check
-		if utils.ClientInstance.GetConnection() != nil {
+		
 			go utils.ClientInstance.Login(email.Text(), password.Text())
 			changeWindow(widget, getHomepageWidget())
-		}
+	
 	})
 	layout.AddWidget(button, 0, 0)
 
