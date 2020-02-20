@@ -9,7 +9,10 @@ import (
 	"strconv"
 )
 
-// TODO Create Client struct to contain session data and client data (See TODO on socket.go)
+type Client struct {
+	ID string
+	LoggedUser string
+}
 
 type Sensor struct {
 	ID string `json:ID`
@@ -22,28 +25,42 @@ type Environment struct {
 	SensorMap map[string]Sensor `json:sensors`
 }
 
-// TODO Add Client interface (?)
+var clientInstance * Client
+
+// Implements singleton pattern
+func GetClientInstance() *Client {
+
+	if clientInstance == nil {
+		clientInstance = &Client{
+			"ID1",
+			"",
+		}
+	}
+
+	return clientInstance
+}
 
 // Gets an array of Environment IDs from the server, to be displayed on the GUI for selection
-func GetEnvList(c * utils.Client) []string {
+func (c * Client) GetEnvList() []string {
 
 	/*
-	request := utils.RequestParams {
-		"getEnvList",
-		c.Token,
+	request := struct {
+		Function string
+		Auth string
+	} {
+		"getEnvList"
+		clientInstance.LoggedUser
 	}
 
 	jsonReq, _ := json.Marshal(request)
 
-	c.SocketSend(conn, jsonReq)
-
 	rx := make(chan []byte)
-	c.SocketReceive(rx)
+	go SocketCommunicate(jsonReq, rx)
 
-	// TODO Take environment list accessing the json
 	var envList struct {
-		Environments [] string `json:"environments"`
-	}
+	Environments [] string `json:"environments"`
+	} {}
+
 	json.Unmarshal(<- rx, &envList)
 	log.Println(envList.Environments)
 
@@ -57,15 +74,15 @@ func GetEnvList(c * utils.Client) []string {
 	return test
 }
 
-func getSensorData(c * utils.Client, uri *url.URL, topic string) {
+func (c * Client) GetSensorData(uri *url.URL, topic string, rtCh chan map[string]Sensor) {
 
-	client := utils.Connect(c.ClientID, uri)
+	client := utils.Connect(c.ID, uri)
 	client.Subscribe(topic, 0, func(client mqtt.Client, msg mqtt.Message) {
 
-		// TODO Substitute with map[string]interface{}
 		sensors := make(map[string]Sensor)
 		env := Environment{SensorMap:sensors}
 
+		json.Unmarshal(msg.Payload(), &env)
 		/*
 			 Payload format:
 			{"ID":"env1","SensorMap":{
@@ -73,56 +90,59 @@ func getSensorData(c * utils.Client, uri *url.URL, topic string) {
 				"sensor2":{"ID":"otherID","Name":"name2","Measurement":4.76}
 			}}
 		*/
-		json.Unmarshal(msg.Payload(), &env)
+		/*
+			// TODO Define sensor map, {sensorID, measurement}
+			 Map needed to update values coming from MQTT broker directly using ID
+			 e.g. sensorMap[ID] = sensorData
+			 sensorMap = Json.Decode(receivedData)["data"]
+			 return sensorList
+		*/
+		rtCh <- env.SensorMap
+
 		log.Println("Received sensor map: ")
 		log.Println(env.SensorMap)
 		log.Println("Payload: " + string(msg.Payload()))
 	})
 }
 
-func SelectEnv(c * utils.Client, rx chan []byte, envName string) {
-
-	params := utils.RequestParams {
-		Function: "selectEnv",
-		Auth:     c.Token,
-	}
+func (c * Client) SelectEnv(envName string, urlCh chan *url.URL) {
 
 	request := struct {
-		Params utils.RequestParams `json:"params"`
-		EnvName string `json:"envName"`
+		Function string `json:"function"`
+		EnvName string `json:"data"`
+		Auth string `json:"auth"`
 	}{
-		params,
+		"selectEnv",
 		envName,
+		c.LoggedUser,
 	}
 
 	jsonReq, _ := json.Marshal(request)
 
-	c.SocketSend(jsonReq)
+	rx := make(chan []byte)
 
-	//Returns broker's address
-	c.SocketReceive(rx)
+	//Returns broker's address on rx channel
+	go utils.SocketCommunicate(jsonReq, rx)
 
+	// TODO To change test data
 	var res = struct {
 		Address string `json:"address"`
 		Topic string `json:"topic"`
-	}{}
+	}{
+		"mqtt://user:pass@localhost:1883",
+		"testtopic",
+	}
 
-	json.Unmarshal(<- rx, &res)
+	//json.Unmarshal(<- rx, &res)
+	<- rx
+	close(rx)
+
 
 	uri, err := url.Parse(res.Address)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	go getSensorData(c, uri, res.Topic)
-
-
-	/*
-	// TODO Define sensor map, {sensorID, measurement} (?)
-	 Map needed to update values coming from MQTT broker directly using ID
-	 e.g. sensorMap[ID] = sensorData
-	 sensorMap = Json.Decode(receivedData)["data"]
-	 return sensorList
-	 */
+	urlCh <- uri
 
 }
