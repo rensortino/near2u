@@ -6,17 +6,18 @@
 #include <assert.h>
 #include <jsoncpp/json/json.h>
 
-#include "Ambiente.cpp"
-#include "User.h"
+#include "Ambiente.hpp"
+#include "User.hpp"
+#include <shared_mutex>
 
 
-namespace Server
-{
 class Controller
 {
 private:
 	std::list<User> users;
 	static Controller* instance;
+	std::shared_mutex User_mutex;
+
 
 	User* Auth(std::string auth_token);
 
@@ -26,8 +27,7 @@ public:
 	Json::Value Seleziona_Ambiente(Json::Value data);
 	Json::Value Register(Json::Value data);
 	Json::Value Login(Json::Value data);
+	User * search_on_cache(std::string email,std::string password);
 
 };
-Controller *Controller::instance = 0;
-}  // namespace Server
 #endif

@@ -1,20 +1,20 @@
-#ifndef USER_H
-#define USER_H
+#ifndef USER_HPP
+#define USER_HPP
 #include <string>
 #include <iostream>
 #include <assert.h>
-#include "Ambiente.h" 
+#include "Ambiente.hpp" 
 
-namespace Server
-{
+
 class User
 {
 
 public:
-     User(const std::string& n, const std::string& s ,const std::string& e , const std::string& p);
+     User(const std::string& n, const std::string& s ,const std::string& e , const std::string& p,const std::string& pa);
      std::string getName();
      std::string getsurname();
      std::string getemail();
+     std::string getPassword();
      std::string getauth_token();
      std::list<Ambiente> * getAmbienti();
 private:
@@ -29,6 +29,5 @@ private:
 
 };
 
-} 
 #endif
  

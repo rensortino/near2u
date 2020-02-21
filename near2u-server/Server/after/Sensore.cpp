@@ -6,8 +6,4 @@
 
 #include "Sensore.h"
 
-namespace Server
-{
 
-
-}  // namespace Server

@@ -1,17 +1,20 @@
 
-#include "User.h"
+#include "User.hpp"
 
-namespace Server
-{
-    User::User(const std::string& n, const std::string& s ,const std::string& e , const std::string& p){
-        User::name = n;
-        User::surname = s;
-        User::email = e;
-        User::auth_token = p;
+
+    User::User(const std::string& n, const std::string& s ,const std::string& e , const std::string& p, const std::string& pa){
+        name = n;
+        surname = s;
+        email = e;
+        auth_token = p;
+        password = pa;
 
     }
     std::string User::getsurname(){
         return surname;
+    }
+    std::string User::getPassword(){
+        return password;
     }
     std::string User::getemail(){
         return email;
@@ -27,5 +30,3 @@ namespace Server
     }
     
 
-
-}  // namespace Server

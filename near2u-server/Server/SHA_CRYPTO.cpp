@@ -1,6 +1,6 @@
-#include "SHA_CRYPTO.h"
+#include "SHA_CRYPTO.hpp"
 
-namespace Server{
+
     std::string SHA_Crypto( std::string stringa){
 
         char aux [stringa.length() + 1];
@@ -22,4 +22,3 @@ namespace Server{
 
 
     }
-}

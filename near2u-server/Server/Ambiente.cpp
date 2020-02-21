@@ -1,9 +1,8 @@
 
 
-#include "Ambiente.h"
+#include "Ambiente.hpp"
 
-namespace Server
-{
+
     Ambiente::Ambiente(std::string name, int cod_ambiente){
         Ambiente::Nome = name;
         Ambiente::codAmbiente = cod_ambiente;
@@ -19,4 +18,4 @@ namespace Server
     }
 
 
-}  
+  

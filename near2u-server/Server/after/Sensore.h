@@ -7,8 +7,7 @@
 #include <iostream>
 #include <assert.h>
 
-namespace Server
-{
+
 class Sensore
 {
 private:
@@ -18,5 +17,4 @@ private:
 
 };
 
-}  // namespace Server
 #endif

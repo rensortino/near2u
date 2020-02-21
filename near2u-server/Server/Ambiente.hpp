@@ -7,8 +7,6 @@
 
 #include "./after/Sensore.h"
 
-namespace Server
-{
 class Ambiente
 {
 	public:
@@ -25,5 +23,4 @@ private:
 
 };
 
-}  
 #endif

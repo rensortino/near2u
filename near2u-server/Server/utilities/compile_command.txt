@@ -1,0 +1,1 @@
+g++ -g -o Main   -I/usr/local/include -I/usr/local/include/cppconn   -Wl,-Bdynamic main.cpp -lmysqlcppconn -ljsoncpp -lcrypto -lssl -pthread -std=c++17

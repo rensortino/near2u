@@ -1,4 +1,4 @@
-#include "MYSQL.h"
+#include "MYSQL.hpp"
 #include <stdlib.h>
 #include <iostream>
 #include <sstream>
@@ -11,7 +11,7 @@
 #include <cppconn/resultset.h>
 #include <cppconn/statement.h>
 #include <cppconn/prepared_statement.h>
-#include "User.cpp"
+#include "User.hpp"
 #include <jsoncpp/json/json.h>
 
 #define HOST "localhost"
@@ -19,7 +19,6 @@
 #define PASS "admin"
 #define DB "apl_project"
 
-using namespace Server;
 namespace MYSQL{
     Json::Value insert( std::string query){
             Json::Value response;
