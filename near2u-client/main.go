@@ -8,8 +8,8 @@ import (
 	qtgui "github.com/therecipe/qt/gui"
 	qt "github.com/therecipe/qt/widgets"
 	"log"
-	"net/url"
 	"os"
+	"time"
 )
 
 var (
@@ -19,7 +19,7 @@ var (
 )
 
 func changeWindow(oldWindow * qt.QWidget, newWindow * qt.QWidget) {
-	oldWindow.Hide()
+	oldWindow.DestroyQWidget()
 	mainWindow.SetCentralWidget(newWindow)
 }
 
@@ -72,12 +72,9 @@ func getSelectEnvWidget() * qt.QWidget {
 	selEnvBtn.ConnectClicked(func (checked bool) {
 		log.Printf("Selected: %s", envList.CurrentText())
 
-		urlCh := make(chan *url.URL)
-		rtCh := make(chan map[string]client.Sensor)
-
 		// TODO Change
-		go clientInstance.SelectEnv("env1", urlCh)
-		changeWindow(widget, getRTDataWidget(<- urlCh, rtCh))
+		clientInstance.SelectEnv("env1")
+		changeWindow(widget, getRTDataWidget())
 	})
 	layout.AddWidget(selEnvBtn, 0, 0)
 
@@ -161,8 +158,8 @@ func getLoginWidget() * qt.QWidget{
 		// TODO Fields validity check
 		rx := make(chan string)
 		token := make(chan string)
-		// TODO Assign token to instance
 		go utils.Login(rx, token, email.Text(), password.Text())
+		// TODO Assign token to instance
 		log.Println(<- token)
 		qt.QMessageBox_Information(nil, "OK", <- rx, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		changeWindow(widget, getHomepageWidget())
@@ -179,7 +176,7 @@ func getLoginWidget() * qt.QWidget{
 
 }
 
-func getRTDataWidget(url *url.URL, rx chan map[string]client.Sensor) * qt.QWidget{
+func getRTDataWidget() * qt.QWidget{
 
 	layout := qt.NewQVBoxLayout()
 
@@ -188,14 +185,32 @@ func getRTDataWidget(url *url.URL, rx chan map[string]client.Sensor) * qt.QWidge
 
 	dataList := qt.NewQListWidget(nil)
 
-	clientInstance.GetSensorData(url, "testtopic", rx)
+	// TODO Parametrize topic
+	topic := "testtopic"
+	rtCh := make(chan map[string]client.Sensor) // Channel for real time data
+	quit := make(chan bool)
 
-	for id, sensor := range <- rx {
-		dataList.AddItem(id + sensor.Name + fmt.Sprintf("%f", sensor.Measurement))
-	}
+	clientInstance.GetSensorData(topic, rtCh)
+
+	// Used a goroutine to run the subscribe callback in parallel and update the data
+	go func() {
+		for {
+			select {
+			case receivedData := <-rtCh:
+				for id, sensor := range receivedData {
+					dataList.AddItem(fmt.Sprintf("%s\t%s\t%f\n",id, sensor.Name, sensor.Measurement))
+				}
+			case <-quit:
+				return
+			}
+			time.Sleep(1 * time.Second)
+		}
+	}()
+	layout.AddWidget(dataList, 0 , 0)
 
 	backBtn := qt.NewQPushButton2("Back", nil)
 	backBtn.ConnectClicked(func (checked bool) {
+		clientInstance.StopGettingData(topic, rtCh, quit)
 		changeWindow(widget, getHomepageWidget())
 	})
 	layout.AddWidget(backBtn, 0, 0)
@@ -203,8 +218,6 @@ func getRTDataWidget(url *url.URL, rx chan map[string]client.Sensor) * qt.QWidge
 	return widget
 
 }
-
-
 
 func initWindow() {
 

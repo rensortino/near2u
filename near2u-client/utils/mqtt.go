@@ -18,7 +18,7 @@ func createClientOptions(clientID string, uri *url.URL) *mqtt.ClientOptions {
 	return opts
 }
 
-func Connect(clientId string, uri *url.URL) mqtt.Client {
+func MQTTConnect(clientId string, uri *url.URL) mqtt.Client {
 	opts := createClientOptions(clientId, uri)
 	client := mqtt.NewClient(opts)
 	token := client.Connect()

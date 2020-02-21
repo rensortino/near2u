@@ -12,6 +12,7 @@ import (
 type Client struct {
 	ID string
 	LoggedUser string
+	MQTTClient mqtt.Client
 }
 
 type Sensor struct {
@@ -34,6 +35,7 @@ func GetClientInstance() *Client {
 		clientInstance = &Client{
 			"ID1",
 			"",
+			nil,
 		}
 	}
 
@@ -74,11 +76,10 @@ func (c * Client) GetEnvList() []string {
 	return test
 }
 
-func (c * Client) GetSensorData(uri *url.URL, topic string, rtCh chan map[string]Sensor) {
+func (c * Client) GetSensorData(topic string, rtCh chan map[string]Sensor) {
 
-	client := utils.Connect(c.ID, uri)
-	client.Subscribe(topic, 0, func(client mqtt.Client, msg mqtt.Message) {
-
+	c.MQTTClient.Subscribe(topic, 0, func(client mqtt.Client, msg mqtt.Message) {
+		// Executes every time a message is published on the topic
 		sensors := make(map[string]Sensor)
 		env := Environment{SensorMap:sensors}
 
@@ -90,22 +91,26 @@ func (c * Client) GetSensorData(uri *url.URL, topic string, rtCh chan map[string
 				"sensor2":{"ID":"otherID","Name":"name2","Measurement":4.76}
 			}}
 		*/
-		/*
-			// TODO Define sensor map, {sensorID, measurement}
-			 Map needed to update values coming from MQTT broker directly using ID
-			 e.g. sensorMap[ID] = sensorData
-			 sensorMap = Json.Decode(receivedData)["data"]
-			 return sensorList
-		*/
-		rtCh <- env.SensorMap
 
-		log.Println("Received sensor map: ")
-		log.Println(env.SensorMap)
-		log.Println("Payload: " + string(msg.Payload()))
+		rtCh <- env.SensorMap
 	})
 }
 
-func (c * Client) SelectEnv(envName string, urlCh chan *url.URL) {
+// Gracefully stops getting data from the broker
+func (c * Client) StopGettingData(topic string, rtCh chan map[string]Sensor, quit chan bool) {
+	c.MQTTClient.Unsubscribe(topic)
+	// Empties the channel before closing it
+	select {
+		case <- rtCh:
+			close(rtCh)
+		default:
+			close(rtCh)
+	}
+	quit <- true
+	close(quit)
+}
+
+func (c * Client) SelectEnv(envName string) {
 
 	request := struct {
 		Function string `json:"function"`
@@ -134,15 +139,14 @@ func (c * Client) SelectEnv(envName string, urlCh chan *url.URL) {
 	}
 
 	//json.Unmarshal(<- rx, &res)
-	<- rx
-	close(rx)
-
 
 	uri, err := url.Parse(res.Address)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	urlCh <- uri
+	if c.MQTTClient == nil {
+		c.MQTTClient = utils.MQTTConnect(c.ID, uri)
+	}
 
 }

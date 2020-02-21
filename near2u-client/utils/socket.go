@@ -13,7 +13,7 @@ var (
 	port = 3333
 )
 
-func check(err error, msg string) {
+func errorCheck(err error, msg string) {
 	if err != nil {
 		log.Println(msg)
 		log.Fatalln(err)
@@ -27,18 +27,18 @@ func socketConnect(ip string, port int) net.Conn{
 	addr := strings.Join([]string{ip, strconv.Itoa(port)}, ":")
 	conn, err := net.Dial("tcp", addr)
 
-	check(err, "Connection Failed")
+	errorCheck(err, "Connection Failed")
 
 	return conn
 }
 
-// socketSend sends JSON on socket connection, accepts marshaled JSON
+// Sends JSON on socket connection, accepts marshaled JSON
 func socketSend(conn net.Conn, jsonReq []byte) {
 	
 	_, err := conn.Write(jsonReq)
 	log.Printf("Sending: %s", string(jsonReq))
 
-	check(err, "Couldn't send data")
+	errorCheck(err, "Couldn't send data")
 }
 
 func socketReceive(conn net.Conn, rx chan []byte) {
@@ -50,10 +50,9 @@ func socketReceive(conn net.Conn, rx chan []byte) {
 			rx <- []byte("EOF")
 			break
 		}
-		check(err, "Error receiving data")
+		errorCheck(err, "Error receiving data")
 		log.Printf("Receive: %s\n", buff[:n])
 		rx  <- buff[:n]
-		log.Printf("Channel content: %s\n", <- rx)
 	}
 }
 

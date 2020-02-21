@@ -44,7 +44,7 @@ func Register(rx chan []byte, name string, surname string, email string, passwor
 	}
 
 	jsonReq, err := json.Marshal(req)
-	check(err, "Marshalling Error")
+	errorCheck(err, "Marshalling Error")
 	SocketCommunicate(jsonReq, rx)
 }
 
@@ -64,7 +64,7 @@ func Login(responseMsg chan string, token chan string, email string, password st
 	}
 
 	jsonReq, err := json.Marshal(req)
-	check(err, "Marshalling Error")
+	errorCheck(err, "Marshalling Error")
 	rx := make(chan []byte)
 	go SocketCommunicate(jsonReq, rx)
 	// TODO Change test string
