@@ -28,6 +28,8 @@ type Environment struct {
 
 var clientInstance * Client
 
+
+
 // Implements singleton pattern
 func GetClientInstance() *Client {
 
@@ -115,32 +117,21 @@ func (c * Client) StopGettingData(topic string, rtCh chan map[string]Sensor, qui
 
 func (c * Client) SelectEnv(envName string, topicCh chan string) {
 
-	request := struct {
-		Function string `json:"function"`
-		EnvName string `json:"data"`
-		Auth string `json:"auth"`
+	data := struct {
+		Name string `json:"name"`
 	}{
-		"seleziona_ambiente",
 		envName,
-		c.LoggedUser,
 	}
 
-	jsonReq, _ := json.Marshal(request)
 
-	rx := make(chan []byte)
+	rx := make(chan interface{})
 
 	//Returns broker's address on rx channel
-	go utils.SocketCommunicate(jsonReq, rx)
+	go utils.SocketCommunicate("seleziona_ambiente", c.LoggedUser, data, rx)
 
-	var res = struct {
-		Status string `json:"status"`
-		Address string `json:"broker_host"`
-		Topic string `json:"topic"`
-	}{}
+	res := (<- rx).(map[string]interface{})
 
-	json.Unmarshal(<- rx, &res)
-
-	uri, err := url.Parse("tcp://" + res.Address)
+	uri, err := url.Parse("tcp://" + res["address"].(string))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -149,8 +140,8 @@ func (c * Client) SelectEnv(envName string, topicCh chan string) {
 		c.MQTTClient = utils.MQTTConnect(c.ID, uri)
 	}
 
-	log.Println(res.Topic)
+	log.Println(res["topic"])
 
-	topicCh <- res.Topic
+	topicCh <- res["topic"].(string)
 	close(topicCh)
 }

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"log"
 	"net"
 	"strconv"
@@ -12,6 +13,27 @@ var (
 	ip   = "127.0.0.1"
 	port = 3333
 )
+
+type Request struct {
+	Function string `json:"function"`
+	Data interface {} `json:"data"`
+	Auth string `json:"auth"`
+}
+
+func buildRequest(function string, auth string, data interface{}) interface{} {
+	request := struct {
+		Function string `json:"function"`
+		Data interface{} `json:"data"`
+		Auth string `json:"auth"`
+	}{
+		function,
+		data,
+		auth,
+	}
+
+	return request
+
+}
 
 func errorCheck(err error, msg string) {
 	if err != nil {
@@ -34,33 +56,50 @@ func socketConnect(ip string, port int) net.Conn{
 
 // Sends JSON on socket connection, accepts marshaled JSON
 func socketSend(conn net.Conn, jsonReq []byte) {
-	
+
 	_, err := conn.Write(jsonReq)
 	log.Printf("Sending: %s", string(jsonReq))
 
 	errorCheck(err, "Couldn't send data")
 }
 
-func socketReceive(conn net.Conn, rx chan []byte) {
+func socketReceive(conn net.Conn) []byte {
 	buff := make([]byte, 8192) // Buffered reads from socket
 	for {
 		n, err := conn.Read(buff)
 		if err != nil && err.Error() == "EOF" {
 			log.Println("EOF Reached, breaking loop")
-			rx <- []byte("EOF")
+			return []byte("EOF")
 			break
 		}
 		errorCheck(err, "Error receiving data")
 		log.Printf("Receive: %s\n", buff[:n])
-		rx  <- buff[:n]
+		return buff[:n]
 	}
+	return []byte("EOF")
 }
 
-func SocketCommunicate(jsonReq []byte, rx chan []byte) {
+// Accepts request parameters, returns JSON as map on the channel
+// TODO Make channel map[string]interface{}
+func SocketCommunicate(function string, auth string, data interface{}, rx chan interface{}) {
 
 	conn := socketConnect(ip, port)
 	defer conn.Close()
 
+	req := buildRequest(function, auth, data)
+
+	jsonReq, _ := json.Marshal(req)
+
 	socketSend(conn, jsonReq)
-	socketReceive(conn, rx)
+	res := socketReceive(conn)
+
+	var jsonRes map[string]interface{}
+
+	if string(res) != "EOF" {
+		json.Unmarshal(res, &jsonRes)
+	} else {
+		eof := []byte(`{"status":"EOF reached"}`)
+		json.Unmarshal(eof, &jsonRes)
+	}
+	rx <- jsonRes
 }

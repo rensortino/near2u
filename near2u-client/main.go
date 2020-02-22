@@ -125,10 +125,11 @@ func getRegisterWidget() * qt.QWidget{
 	registerBtn := qt.NewQPushButton2("Register", nil)
 	registerBtn.ConnectClicked(func(checked bool) {
 		// TODO Email field validation check
-		rx := make(chan []byte)
+		rx := make(chan interface{})
 		go utils.Register(rx, name.Text(), surname.Text(), email.Text(), password.Text())
 		// TODO Verify server response correctness
-		qt.QMessageBox_Information(nil, "OK", string(<- rx), qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		res := (<- rx).(map[string]interface{})
+		qt.QMessageBox_Information(nil, "OK", res["message"].(string), qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		changeWindow(widget, getHomepageWidget())
 
 	})

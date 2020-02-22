@@ -1,87 +1,51 @@
 package utils
 
 import (
-	"encoding/json"
 	"log"
-	//"regexp"
 )
 
-// TODO Remove nested struct
-type loginData struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
+func Register(rx chan interface{}, name string, surname string, email string, password string)  {
 
-// Defines the User data to maintain during a session
-type User struct {
-	registerData
-	Token string
-}
-
-// Represents the User data to parse into JSON
-type registerData struct {
-	Name      string `json:"name"`
-	Surname   string `json:"surname"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-func Register(rx chan []byte, name string, surname string, email string, password string)  {
-
-	newUser := registerData {
+	newUser := struct {
+		Name string `json:"name"`
+		Surname string `json:"surname"`
+		Email string `json:"email"`
+		Password string `json:"password"`
+	} {
 		name,
 		surname,
 		email,
 		password,
 	}
 
-	req := struct {
-		Function string 		`json:"function"`
-		NewUser registerData    `json:"data"`
-	} {
-		"register",
-		newUser,
-	}
-
-	jsonReq, err := json.Marshal(req)
-	errorCheck(err, "Marshalling Error")
-	SocketCommunicate(jsonReq, rx)
+	SocketCommunicate("register", "", newUser, rx)
 }
 
 func Login(responseMsg chan string, token chan string, email string, password string) {
 
-	login := loginData{
+	data := struct {
+		Email string
+		Password string
+	} {
 		email,
 		password,
 	}
 
-	req := struct {
-		Function string `json:"function"`
-		Login  loginData     `json:"data"`
-	} {
-		"login",
-		login,
-	}
-
-	jsonReq, err := json.Marshal(req)
-	errorCheck(err, "Marshalling Error")
-	rx := make(chan []byte)
-	go SocketCommunicate(jsonReq, rx)
+	rx := make(chan interface{})
+	go SocketCommunicate("login", "", data, rx)
 	// TODO Change test string
 	//rx <- []byte("0CC0FA6935783505506B0E3B81A566E1B9A7FEBA") // Test SHA1 string
-	var res = struct {
-		Status string `json:"status"`
-		Message string `json:"message"`
-	}{}
-	json.Unmarshal(<- rx, &res)
-	log.Println(res.Status)
-	if (res.Status == "Succesfull"){
 
-		token <- res.Message
+	res := (<- rx).(map[string]interface{}) // res has type map[string]interface{}
+
+	log.Println(res["status"])
+	if res["status"] == "Succesfull" {
+
+		token <- res["message"].(string)
 		responseMsg <- "User Authenticated"
 	}else {
 		token <- "NULL"
-		responseMsg <- res.Message
+		responseMsg <- res["message"].(string)
 	}
 
 		/*
