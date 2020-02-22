@@ -14,7 +14,7 @@ int main(){
    sockaddr_in sockaddr;
   sockaddr.sin_family = AF_INET;
   sockaddr.sin_addr.s_addr = INADDR_ANY;
-  sockaddr.sin_port = htons(8080);
+  sockaddr.sin_port = htons(3333);
 
   if (bind(sockfd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
     std::cout << "Failed to bind to port 9999. errno: " << errno << std::endl;

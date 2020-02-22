@@ -63,18 +63,24 @@ func getSelectEnvWidget() * qt.QWidget {
 
 	widget := qt.NewQWidget(nil, 0)
 	widget.SetLayout(layout)
+	/*
 	envList := qt.NewQComboBox(nil)
 	envList.AddItems(clientInstance.GetEnvList())
 	envList.SetEditable(false)
 	layout.AddWidget(envList, 0, 0)
+	*/
+
+	envName := qt.NewQLineEdit(nil)
+	layout.AddWidget(envName, 0, 0)
 
 	selEnvBtn := qt.NewQPushButton2("Select", nil)
 	selEnvBtn.ConnectClicked(func (checked bool) {
-		log.Printf("Selected: %s", envList.CurrentText())
+		log.Printf("Selected: %s", envName.Text())
 
 		// TODO Change
-		clientInstance.SelectEnv("env1")
-		changeWindow(widget, getRTDataWidget())
+		topicCh := make(chan string)
+		go clientInstance.SelectEnv(envName.Text(), topicCh)
+		changeWindow(widget, getRTDataWidget(<- topicCh))
 	})
 	layout.AddWidget(selEnvBtn, 0, 0)
 
@@ -159,8 +165,7 @@ func getLoginWidget() * qt.QWidget{
 		rx := make(chan string)
 		token := make(chan string)
 		go utils.Login(rx, token, email.Text(), password.Text())
-		// TODO Assign token to instance
-		log.Println(<- token)
+		clientInstance.LoggedUser = <- token
 		qt.QMessageBox_Information(nil, "OK", <- rx, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		changeWindow(widget, getHomepageWidget())
 	})
@@ -176,7 +181,7 @@ func getLoginWidget() * qt.QWidget{
 
 }
 
-func getRTDataWidget() * qt.QWidget{
+func getRTDataWidget(topic string) * qt.QWidget{
 
 	layout := qt.NewQVBoxLayout()
 
@@ -185,8 +190,6 @@ func getRTDataWidget() * qt.QWidget{
 
 	dataList := qt.NewQListWidget(nil)
 
-	// TODO Parametrize topic
-	topic := "testtopic"
 	rtCh := make(chan map[string]client.Sensor) // Channel for real time data
 	quit := make(chan bool)
 

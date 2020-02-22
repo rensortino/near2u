@@ -92,7 +92,8 @@
 	Json::Value Controller::Seleziona_Ambiente(Json::Value data){
 		Json::Value response;
 		std::cout << "seleziona_ambiente"<< std::endl;
-		User * Current_User = Controller::Auth(data["auth_token"].asString());
+		std::cout << data.toStyledString() << std::endl;
+		User * Current_User = Controller::Auth(data["auth"].asString());
 
 		if(Current_User == nullptr){
 			response["status"] = "Failed";
@@ -104,34 +105,34 @@
 		std::list<Ambiente>::iterator cache_ambiente;
 			User_mutex.lock_shared();
 			for (cache_ambiente = Current_User->getAmbienti()->begin(); cache_ambiente != Current_User->getAmbienti()->end(); ++cache_ambiente){
-				if(cache_ambiente->getNome().compare(data["name"].asString()) == 0 ){
-					response["Status"] = "Succesfull";
-					response["broker_host"] = "localhost:8082"; // qua poi inserire una variabile d'ambiente
-					response["topic"] = cache_ambiente->getcodAmbiente();
+				if(cache_ambiente->getNome().compare(data["data"].asString()) == 0 ){
+					response["status"] = "Succesfull";
+					response["message"]["broker_host"] = "localhost:8082"; // qua poi inserire una variabile d'ambiente
+					response["message"]["topic"] = std::to_string(cache_ambiente->getcodAmbiente());
 					User_mutex.unlock_shared();
 					return response;
 				}
 			}
 			User_mutex.unlock_shared();
 
-			std::string query = "select Ambiente.cod_ambiente, Ambiente.name from User join (Ambiente_User join Ambiente on Ambiente.cod_ambiente = Ambiente_User.cod_ambiente ) on User_id = User.ID  where Ambiente.name = '"+ data["name"].asString() + "';"; 
+			std::string query = "select Ambiente.cod_ambiente, Ambiente.name from User join (Ambiente_User join Ambiente on Ambiente.cod_ambiente = Ambiente_User.cod_ambiente ) on User_id = User.ID  where Ambiente.name = '"+ data["data"].asString() + "';"; 
 			sql::ResultSet *res = MYSQL::Select_Query(query);
 
 			if( res->rowsCount() == 0){
-            response["Status"] = "Failed";
-            response["error"] = "Ambiente not Found";
+            response["status"] = "Failed";
+            response["message"] = "Ambiente not Found";
         	}
 			else
 			{
 				while (res->next()) {
-					response["topic"] = res->getInt("cod_ambiente");
+					response["message"]["topic"] = std::to_string(res->getInt("cod_ambiente"));
 					Ambiente ambiente((std::string) res->getString("name"), res->getInt("cod_ambiente"));
 					User_mutex.lock();
 					Current_User->getAmbienti()->push_back(ambiente);
 					User_mutex.unlock();
             }
-            	response["Status"] = "Succesfull";
-				response["broker_host"] = "localhost:8082"; 
+            	response["status"] = "Succesfull";
+				response["message"]["broker_host"] = "localhost:8082"; 
 				
 			}
 			delete res;

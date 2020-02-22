@@ -76,7 +76,7 @@
                 response =  controller->Login(requestjson["data"]).toStyledString();  
                 break;
             case Selezione_Ambiente:
-                response =  controller->Seleziona_Ambiente(requestjson["data"]).toStyledString(); 
+                response =  controller->Seleziona_Ambiente(requestjson).toStyledString(); 
                 break;
 
             default:

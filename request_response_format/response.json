@@ -1,0 +1,25 @@
+{
+    "status" : "",
+    "error": "",
+    "data": ""
+}
+
+
+//data for register 
+
+{
+    "name" : "",
+    "surname": "",
+    "email": ""
+}
+
+//data for login
+{
+    "auth": ""
+}
+//data for seleziona ambiente
+
+{
+    "broker_host" : "",
+    "topic" : ""
+}

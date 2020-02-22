@@ -3,7 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"log"
-	"regexp"
+	//"regexp"
 )
 
 // TODO Remove nested struct
@@ -70,13 +70,21 @@ func Login(responseMsg chan string, token chan string, email string, password st
 	// TODO Change test string
 	//rx <- []byte("0CC0FA6935783505506B0E3B81A566E1B9A7FEBA") // Test SHA1 string
 	var res = struct {
-		Status string `json:"Status"`
+		Status string `json:"status"`
 		Message string `json:"message"`
 	}{}
 	json.Unmarshal(<- rx, &res)
-	res.Status = "Succesfull"
 	log.Println(res.Status)
 	if (res.Status == "Succesfull"){
+
+		token <- res.Message
+		responseMsg <- "User Authenticated"
+	}else {
+		token <- "NULL"
+		responseMsg <- res.Message
+	}
+
+		/*
 
 		// Checks if token matches the SHA1 format
 		isHash, _ := regexp.MatchString("\b[0-9a-f]{5,40}\b", res.Message)
@@ -95,4 +103,6 @@ func Login(responseMsg chan string, token chan string, email string, password st
 		token <- "NULL"
 		responseMsg <- "Error"
 	}
+	*/
+
 }

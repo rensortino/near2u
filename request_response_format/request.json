@@ -1,0 +1,23 @@
+{
+    "function" : "funzione richiesta",
+    "data": "dati, in formato json",
+    "auth": "token auth"
+}
+
+//data format for register
+{
+    "name": "",
+    "surname": "",
+    "email": "",
+    "password": ""
+}
+
+//data format for login
+{
+    "email":"",
+    "password":""
+}
+// data format for seleziona_ambiente
+{
+    "name": ""
+}

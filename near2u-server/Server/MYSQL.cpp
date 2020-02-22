@@ -41,13 +41,14 @@ namespace MYSQL{
                 std::cout << " (MySQL error code: " << e.getErrorCode();
                 std::cout << ", SQLState: " << e.getSQLState() << " )" << std::endl;
 
-                response["Status"] = "Error";
+                response["status"] = "Error";
                 response["message"] = e.what();
 
                 return response;
             }
 
-        response["Status"] = "Succesfull";
+        response["status"] = "Succesfull";
+        response["message"] = "registration done";
         return response;
     }
 

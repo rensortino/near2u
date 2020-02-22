@@ -84,6 +84,9 @@ func (c * Client) GetSensorData(topic string, rtCh chan map[string]Sensor) {
 		env := Environment{SensorMap:sensors}
 
 		json.Unmarshal(msg.Payload(), &env)
+
+		log.Println("Data Received")
+		log.Println(env)
 		/*
 			 Payload format:
 			{"ID":"env1","SensorMap":{
@@ -110,14 +113,14 @@ func (c * Client) StopGettingData(topic string, rtCh chan map[string]Sensor, qui
 	close(quit)
 }
 
-func (c * Client) SelectEnv(envName string) {
+func (c * Client) SelectEnv(envName string, topicCh chan string) {
 
 	request := struct {
 		Function string `json:"function"`
 		EnvName string `json:"data"`
 		Auth string `json:"auth"`
 	}{
-		"selectEnv",
+		"seleziona_ambiente",
 		envName,
 		c.LoggedUser,
 	}
@@ -129,18 +132,15 @@ func (c * Client) SelectEnv(envName string) {
 	//Returns broker's address on rx channel
 	go utils.SocketCommunicate(jsonReq, rx)
 
-	// TODO To change test data
 	var res = struct {
-		Address string `json:"address"`
+		Status string `json:"status"`
+		Address string `json:"broker_host"`
 		Topic string `json:"topic"`
-	}{
-		"mqtt://user:pass@localhost:1883",
-		"testtopic",
-	}
+	}{}
 
-	//json.Unmarshal(<- rx, &res)
+	json.Unmarshal(<- rx, &res)
 
-	uri, err := url.Parse(res.Address)
+	uri, err := url.Parse("tcp://" + res.Address)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -149,4 +149,8 @@ func (c * Client) SelectEnv(envName string) {
 		c.MQTTClient = utils.MQTTConnect(c.ID, uri)
 	}
 
+	log.Println(res.Topic)
+
+	topicCh <- res.Topic
+	close(topicCh)
 }
