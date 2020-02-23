@@ -6,6 +6,8 @@
 #include "SHA_CRYPTO.hpp"
 #include "MYSQL.hpp"
 
+	
+
 
 
 	Controller* Controller::getIstance(){
@@ -29,16 +31,27 @@
 		return nullptr;
 	}
 	Json::Value Controller::Register(Json::Value data){
+		Json::Value response;
+		
 
 		std::cout << data.toStyledString() <<std::endl;
 		std::string query = "INSERT INTO User (name, surname, email, password,auth_token)\
                                 VALUES ('"+ data["name"].asString() + "','" + data["surname"].asString() + "','"+data["email"].asString()+"','"+data["password"].asString()+"','"+SHA_Crypto(data["email"].asString() + data["password"].asString())+"');";
-		return  MYSQL::insert(query);
+		response = MYSQL::insert(query);
+		if(response["status"].asString().compare("succesfull") == 0){
+			response["data"]["name"] = data["name"].asString();
+			response["data"]["surname"] = data["surname"].asString();
+			response["data"]["email"] = data["email"].asString();
+		}
+		  return response;
 	
 	}
 	Json::Value Controller::Login(Json::Value data){
 		
 		Json::Value response;
+		response["status"] = "";
+		response["error"] = "";
+		
 		
 		
 		if(search_on_cache(data["email"].asString(),data["password"].asString()) == nullptr){
@@ -46,26 +59,27 @@
 			sql::ResultSet  *res;
 			res = MYSQL::Select_Query(query);
 			if( res->rowsCount() == 0){
-				response["Status"] = "Failed";
-				response["message"] = "No user found please check credentials";
+				response["status"] = "failed";
+				response["error"] = "No user found please check credentials";
+				response["data"] = "";
 			}
 			else {
 				while (res->next()) {
-					std::cout << ", auth_token = '" << res->getString("auth_token") << "'" << std::endl;
-					response["message"] = (std::string) res->getString("auth_token");
+					std::cout << "auth_token = '" << res->getString("auth_token") << "'" << std::endl;
+					response["data"]["auth"] = (std::string) res->getString("auth_token");
 					User user((std::string) res->getString("name"),(std::string) res->getString("surname"),(std::string) res->getString("email"),(std::string) res->getString("auth_token"),(std::string) res->getString("password"));
 					
 					User_mutex.lock();
 					Controller::users.push_back(user);
 					User_mutex.unlock();
 				}
-				response["Status"] = "Succesfull";   
+				response["status"] = "succesfull";   
 			}
 			delete res;
 		}
 		else{
-			response["Status"] = "Succesfull";
-			response["message"] = search_on_cache(data["email"].asString(),data["password"].asString())->getauth_token();
+			response["status"] = "succesfull";
+			response["data"]["auth"] = search_on_cache(data["email"].asString(),data["password"].asString())->getauth_token();
 		}
 			return response;  
 
@@ -91,13 +105,16 @@
 	}
 	Json::Value Controller::Seleziona_Ambiente(Json::Value data){
 		Json::Value response;
+		response["status"] = "";
+		response["error"] = "";
 		std::cout << "seleziona_ambiente"<< std::endl;
 		std::cout << data.toStyledString() << std::endl;
 		User * Current_User = Controller::Auth(data["auth"].asString());
 
 		if(Current_User == nullptr){
-			response["status"] = "Failed";
-			response["message"] = "Unauthorized";
+			response["status"] = "failed";
+			response["error"] = "Unauthorized";
+			response["data"] = "";
 			return response;
 		}
 	
@@ -105,34 +122,35 @@
 		std::list<Ambiente>::iterator cache_ambiente;
 			User_mutex.lock_shared();
 			for (cache_ambiente = Current_User->getAmbienti()->begin(); cache_ambiente != Current_User->getAmbienti()->end(); ++cache_ambiente){
-				if(cache_ambiente->getNome().compare(data["data"].asString()) == 0 ){
+				if(cache_ambiente->getNome().compare(data["data"]["name"].asString()) == 0 ){
 					response["status"] = "Succesfull";
-					response["message"]["broker_host"] = "localhost:8082"; // qua poi inserire una variabile d'ambiente
-					response["message"]["topic"] = std::to_string(cache_ambiente->getcodAmbiente());
+					response["data"]["broker_host"] = "localhost:8082"; // qua poi inserire una variabile d'ambiente
+					response["data"]["topic"] = std::to_string(cache_ambiente->getcodAmbiente());
 					User_mutex.unlock_shared();
 					return response;
 				}
 			}
 			User_mutex.unlock_shared();
 
-			std::string query = "select Ambiente.cod_ambiente, Ambiente.name from User join (Ambiente_User join Ambiente on Ambiente.cod_ambiente = Ambiente_User.cod_ambiente ) on User_id = User.ID  where Ambiente.name = '"+ data["data"].asString() + "';"; 
+			std::string query = "select Ambiente.cod_ambiente, Ambiente.name from User join (Ambiente_User join Ambiente on Ambiente.cod_ambiente = Ambiente_User.cod_ambiente ) on User_id = User.ID  where Ambiente.name = '"+ data["data"]["name"].asString() + "' and User.email ='"+Current_User->getemail() +"';"; 
+			std::cout << query << std::endl;
 			sql::ResultSet *res = MYSQL::Select_Query(query);
 
 			if( res->rowsCount() == 0){
-            response["status"] = "Failed";
-            response["message"] = "Ambiente not Found";
+            response["status"] = "failed";
+            response["error"] = "Ambiente not Found";
         	}
 			else
 			{
 				while (res->next()) {
-					response["message"]["topic"] = std::to_string(res->getInt("cod_ambiente"));
+					response["data"]["topic"] = std::to_string(res->getInt("cod_ambiente"));
 					Ambiente ambiente((std::string) res->getString("name"), res->getInt("cod_ambiente"));
 					User_mutex.lock();
 					Current_User->getAmbienti()->push_back(ambiente);
 					User_mutex.unlock();
             }
-            	response["status"] = "Succesfull";
-				response["message"]["broker_host"] = "localhost:8082"; 
+            	response["status"] = "succesfull";
+				response["data"]["broker_host"] = "localhost:8082"; 
 				
 			}
 			delete res;

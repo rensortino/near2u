@@ -22,6 +22,9 @@
 namespace MYSQL{
     Json::Value insert( std::string query){
             Json::Value response;
+            response["status"] = "";
+		    response["error"] = "";
+		    response["data"] = "";
 
         try {
 
@@ -42,13 +45,14 @@ namespace MYSQL{
                 std::cout << ", SQLState: " << e.getSQLState() << " )" << std::endl;
 
                 response["status"] = "Error";
-                response["message"] = e.what();
+                response["error"] = e.what();
+                
 
                 return response;
             }
 
-        response["status"] = "Succesfull";
-        response["message"] = "registration done";
+        response["status"] = "succesfull";
+        response["error"] = "";
         return response;
     }
 

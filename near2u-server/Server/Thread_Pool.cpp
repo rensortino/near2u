@@ -84,7 +84,6 @@
                 break;
         }
         send(request.first, response.c_str(), response.size(), 0);
-
         // Close the connection
         close(request.first);
     }
