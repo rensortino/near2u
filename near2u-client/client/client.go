@@ -123,13 +123,12 @@ func (c * Client) SelectEnv(envName string, topicCh chan string) {
 		envName,
 	}
 
-
-	rx := make(chan interface{})
+	rx := make(chan map[string]interface{})
 
 	//Returns broker's address on rx channel
 	go utils.SocketCommunicate("seleziona_ambiente", c.LoggedUser, data, rx)
 
-	res := (<- rx).(map[string]interface{})
+	res := <- rx
 
 	uri, err := url.Parse("tcp://" + res["address"].(string))
 	if err != nil {

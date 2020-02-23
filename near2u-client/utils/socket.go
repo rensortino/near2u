@@ -42,8 +42,6 @@ func errorCheck(err error, msg string) {
 	}
 }
 
-// TODO make methods private
-
 // SocketConnect binds to a remote socket
 func socketConnect(ip string, port int) net.Conn{
 	addr := strings.Join([]string{ip, strconv.Itoa(port)}, ":")
@@ -79,9 +77,8 @@ func socketReceive(conn net.Conn) []byte {
 	return []byte("EOF")
 }
 
-// Accepts request parameters, returns JSON as map on the channel
-// TODO Make channel map[string]interface{}
-func SocketCommunicate(function string, auth string, data interface{}, rx chan interface{}) {
+// Accepts request parameters, returns JSON as map[string]interface{} on the channel
+func SocketCommunicate(function string, auth string, data interface{}, rx chan map[string]interface{}) {
 
 	conn := socketConnect(ip, port)
 	defer conn.Close()
@@ -93,7 +90,7 @@ func SocketCommunicate(function string, auth string, data interface{}, rx chan i
 	socketSend(conn, jsonReq)
 	res := socketReceive(conn)
 
-	var jsonRes map[string]interface{}
+	jsonRes := make(map[string]interface{})
 
 	if string(res) != "EOF" {
 		json.Unmarshal(res, &jsonRes)
