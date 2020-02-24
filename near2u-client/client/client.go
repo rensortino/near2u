@@ -23,6 +23,7 @@ type Sensor struct {
 
 type Environment struct {
 	ID string `json:ID`
+	Name string `json:name`
 	SensorMap map[string]Sensor `json:sensors`
 }
 

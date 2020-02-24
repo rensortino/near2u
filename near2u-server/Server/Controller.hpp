@@ -20,6 +20,7 @@ private:
 
 
 	User* Auth(std::string auth_token);
+	User * search_on_cache(std::string email,std::string password);
 
 
 public:
@@ -27,7 +28,7 @@ public:
 	Json::Value Seleziona_Ambiente(Json::Value data);
 	Json::Value Register(Json::Value data);
 	Json::Value Login(Json::Value data);
-	User * search_on_cache(std::string email,std::string password);
+	
 
 };
 #endif
