@@ -1,10 +1,6 @@
 package utils
 
-import (
-	"log"
-)
-
-func Login(responseMsg chan string, token chan string, email string, password string) {
+func Login(responseMsg, token chan string, email, password string) {
 
 	data := struct {
 		Email string
@@ -16,14 +12,10 @@ func Login(responseMsg chan string, token chan string, email string, password st
 
 	rx := make(chan map[string]interface{})
 	go SocketCommunicate("login", "", data, rx)
-	// TODO Change test string
-	//rx <- []byte("0CC0FA6935783505506B0E3B81A566E1B9A7FEBA") // Test SHA1 string
 
 	res := <- rx // res has type map[string]interface{}
 
-	log.Println(res["status"])
 	if res["status"] == "Succesfull" {
-
 		// Accesses nested json
 		token <- res["data"].(map[string]interface{})["auth"].(string)
 		responseMsg <- "User Authenticated"
@@ -55,7 +47,7 @@ func Login(responseMsg chan string, token chan string, email string, password st
 
 }
 
-func Register(rx chan map[string]interface{}, name string, surname string, email string, password string)  {
+func Register(responseMsg chan string, name, surname, email, password string)  {
 
 	newUser := struct {
 		Name string `json:"name"`
@@ -69,5 +61,15 @@ func Register(rx chan map[string]interface{}, name string, surname string, email
 		password,
 	}
 
-	SocketCommunicate("register", "", newUser, rx)
+	rx := make(chan map[string]interface{})
+
+	go SocketCommunicate("register", "", newUser, rx)
+
+	res := <- rx
+
+	if res["status"] == "Succesfull" {
+		responseMsg <- "User Registered"
+	}else {
+		responseMsg <- res["error"].(string)
+	}
 }

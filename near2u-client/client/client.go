@@ -116,7 +116,7 @@ func (c * Client) StopGettingData(topic string, rtCh chan map[string]Sensor, qui
 	close(quit)
 }
 
-func (c * Client) SelectEnv(envName string, topicCh chan string) {
+func (c * Client) SelectEnv(envName string, topicCh, errCh chan string) {
 
 	data := struct {
 		Name string `json:"name"`
@@ -131,9 +131,10 @@ func (c * Client) SelectEnv(envName string, topicCh chan string) {
 
 	res := <- rx
 	if(res["status"] == "Failed"){
-		log.Println("errore")
-		//aggiungi semantica di errore
+		errCh <- "Request Failed, Retry"
+		return
 	}
+
 	uri, err := url.Parse("tcp://" + res["data"].(map[string]interface{})["broker_host"].(string))
 	if err != nil {
 		log.Fatal(err)
