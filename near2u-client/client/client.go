@@ -131,7 +131,7 @@ func (c * Client) SelectEnv(envName string, topicCh, errCh chan string) {
 
 	res := <- rx
 	if(res["status"] == "Failed"){
-		errCh <- "Request Failed, Retry"
+		errCh <- res["error"].(string)
 		return
 	}
 
