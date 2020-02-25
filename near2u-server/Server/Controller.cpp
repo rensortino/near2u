@@ -51,15 +51,16 @@
 		Json::Value response;
 		response["status"] = "";
 		response["error"] = "";
+		User * aux;
 		
+		aux = search_on_cache(data["Email"].asString(),data["Password"].asString());
 		
-		
-		if(search_on_cache(data["Email"].asString(),data["Password"].asString()) == nullptr){
+		if( aux == nullptr){
 			std::string query = "select name,surname,email,auth_token,password from User where email = '" + data["Email"].asString() + "' and password = '" + data["Password"].asString() + "'";
 			sql::ResultSet  *res;
 			res = MYSQL::Select_Query(query);
 			if( res->rowsCount() == 0){
-				response["status"] = "failed";
+				response["status"] = "Failed";
 				response["error"] = "No user found please check credentials";
 				response["data"] = "";
 			}
@@ -78,8 +79,8 @@
 			delete res;
 		}
 		else{
-			response["status"] = "succesfull";
-			response["data"]["auth"] = search_on_cache(data["email"].asString(),data["password"].asString())->getauth_token();
+			response["status"] = "Succesfull";
+			response["data"]["auth"] = aux ->getauth_token();
 		}
 			return response;  
 
