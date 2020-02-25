@@ -24,7 +24,6 @@ namespace MYSQL{
             Json::Value response;
             response["status"] = "";
 		    response["error"] = "";
-		    response["data"] = "";
 
         try {
 
@@ -51,7 +50,7 @@ namespace MYSQL{
                 return response;
             }
 
-        response["status"] = "succesfull";
+        response["status"] = "Succesfull";
         response["error"] = "";
         return response;
     }

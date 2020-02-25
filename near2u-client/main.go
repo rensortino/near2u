@@ -57,32 +57,37 @@ func getHomepageWidget() * qt.QWidget{
 	return widget
 }
 
-func getSelectEnvWidget() * qt.QWidget {
+func getLoginWidget() * qt.QWidget{
 
 	layout := qt.NewQVBoxLayout()
 
 	widget := qt.NewQWidget(nil, 0)
 	widget.SetLayout(layout)
-	/*
-	envList := qt.NewQComboBox(nil)
-	envList.AddItems(clientInstance.GetEnvList())
-	envList.SetEditable(false)
-	layout.AddWidget(envList, 0, 0)
-	*/
 
-	envName := qt.NewQLineEdit(nil)
-	layout.AddWidget(envName, 0, 0)
+	email := qt.NewQLineEdit(nil)
+	email.SetPlaceholderText("Email")
+	layout.AddWidget(email, 0, 0)
 
-	selEnvBtn := qt.NewQPushButton2("Select", nil)
-	selEnvBtn.ConnectClicked(func (checked bool) {
-		log.Printf("Selected: %s", envName.Text())
+	password := qt.NewQLineEdit(nil)
+	password.SetPlaceholderText("Password")
+	layout.AddWidget(password, 0, 0)
 
-		// TODO Change
-		topicCh := make(chan string)
-		go clientInstance.SelectEnv(envName.Text(), topicCh)
-		changeWindow(widget, getRTDataWidget(<- topicCh))
+	loginBtn := qt.NewQPushButton2("Log In", nil)
+	loginBtn.ConnectClicked(func(checked bool) {
+		// TODO Fields validity check
+		responseMsg := make(chan string)
+		token := make(chan string)
+		go utils.Login(responseMsg, token, email.Text(), password.Text())
+		clientInstance.LoggedUser = <- token
+		res := <- responseMsg
+		if res == "Succesfull" {
+			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		} else {
+			qt.QMessageBox_Information(nil, "Error", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		}
+		changeWindow(widget, getHomepageWidget())
 	})
-	layout.AddWidget(selEnvBtn, 0, 0)
+	layout.AddWidget(loginBtn, 0, 0)
 
 	backBtn := qt.NewQPushButton2("Back", nil)
 	backBtn.ConnectClicked(func (checked bool) {
@@ -125,11 +130,15 @@ func getRegisterWidget() * qt.QWidget{
 	registerBtn := qt.NewQPushButton2("Register", nil)
 	registerBtn.ConnectClicked(func(checked bool) {
 		// TODO Email field validation check
-		rx := make(chan map[string]interface{})
+		rx := make(chan string)
 		go utils.Register(rx, name.Text(), surname.Text(), email.Text(), password.Text())
 		// TODO Verify server response correctness
 		res := <- rx
-		qt.QMessageBox_Information(nil, "OK", res["message"].(string), qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		if res == "Succesfull"{
+			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		} else {
+			qt.QMessageBox_Information(nil, "Error", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		}
 		changeWindow(widget, getHomepageWidget())
 
 	})
@@ -145,32 +154,36 @@ func getRegisterWidget() * qt.QWidget{
 
 }
 
-func getLoginWidget() * qt.QWidget{
+func getSelectEnvWidget() * qt.QWidget {
 
 	layout := qt.NewQVBoxLayout()
 
 	widget := qt.NewQWidget(nil, 0)
 	widget.SetLayout(layout)
+	/*
+	envList := qt.NewQComboBox(nil)
+	envList.AddItems(clientInstance.GetEnvList())
+	envList.SetEditable(false)
+	layout.AddWidget(envList, 0, 0)
+	*/
 
-	email := qt.NewQLineEdit(nil)
-	email.SetPlaceholderText("Email")
-	layout.AddWidget(email, 0, 0)
+	envName := qt.NewQLineEdit(nil)
+	layout.AddWidget(envName, 0, 0)
 
-	password := qt.NewQLineEdit(nil)
-	password.SetPlaceholderText("Password")
-	layout.AddWidget(password, 0, 0)
-
-	loginBtn := qt.NewQPushButton2("Log In", nil)
-	loginBtn.ConnectClicked(func(checked bool) {
-		// TODO Fields validity check
-		rx := make(chan string)
-		token := make(chan string)
-		go utils.Login(rx, token, email.Text(), password.Text())
-		clientInstance.LoggedUser = <- token
-		qt.QMessageBox_Information(nil, "OK", <- rx, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-		changeWindow(widget, getHomepageWidget())
+	selEnvBtn := qt.NewQPushButton2("Select", nil)
+	selEnvBtn.ConnectClicked(func (checked bool) {
+		log.Printf("Selected: %s", envName.Text())
+		topicCh := make(chan string) // Stores the topic returned from the server
+		errCh := make(chan string) // Stores the error message, in case of failed request
+		go clientInstance.SelectEnv(envName.Text(), topicCh, errCh)
+		select {
+			case topic := <- topicCh :
+				changeWindow(widget, getRTDataWidget(topic))
+			case error := <- errCh:
+				qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		}
 	})
-	layout.AddWidget(loginBtn, 0, 0)
+	layout.AddWidget(selEnvBtn, 0, 0)
 
 	backBtn := qt.NewQPushButton2("Back", nil)
 	backBtn.ConnectClicked(func (checked bool) {

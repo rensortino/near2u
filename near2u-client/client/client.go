@@ -23,6 +23,7 @@ type Sensor struct {
 
 type Environment struct {
 	ID string `json:ID`
+	Name string `json:name`
 	SensorMap map[string]Sensor `json:sensors`
 }
 
@@ -115,7 +116,7 @@ func (c * Client) StopGettingData(topic string, rtCh chan map[string]Sensor, qui
 	close(quit)
 }
 
-func (c * Client) SelectEnv(envName string, topicCh chan string) {
+func (c * Client) SelectEnv(envName string, topicCh, errCh chan string) {
 
 	data := struct {
 		Name string `json:"name"`
@@ -129,8 +130,12 @@ func (c * Client) SelectEnv(envName string, topicCh chan string) {
 	go utils.SocketCommunicate("seleziona_ambiente", c.LoggedUser, data, rx)
 
 	res := <- rx
+	if(res["status"] == "Failed"){
+		errCh <- "Request Failed, Retry"
+		return
+	}
 
-	uri, err := url.Parse("tcp://" + res["address"].(string))
+	uri, err := url.Parse("tcp://" + res["data"].(map[string]interface{})["broker_host"].(string))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -139,8 +144,8 @@ func (c * Client) SelectEnv(envName string, topicCh chan string) {
 		c.MQTTClient = utils.MQTTConnect(c.ID, uri)
 	}
 
-	log.Println(res["topic"])
+	log.Println(res["data"].(map[string]interface{})["topic"])
 
-	topicCh <- res["topic"].(string)
+	topicCh <- res["data"].(map[string]interface{})["topic"].(string)
 	close(topicCh)
 }

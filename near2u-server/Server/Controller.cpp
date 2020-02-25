@@ -38,7 +38,7 @@
 		std::string query = "INSERT INTO User (name, surname, email, password,auth_token)\
                                 VALUES ('"+ data["name"].asString() + "','" + data["surname"].asString() + "','"+data["email"].asString()+"','"+data["password"].asString()+"','"+SHA_Crypto(data["email"].asString() + data["password"].asString())+"');";
 		response = MYSQL::insert(query);
-		if(response["status"].asString().compare("succesfull") == 0){
+		if(response["status"].asString().compare("Succesfull") == 0){
 			response["data"]["name"] = data["name"].asString();
 			response["data"]["surname"] = data["surname"].asString();
 			response["data"]["email"] = data["email"].asString();
@@ -54,8 +54,8 @@
 		
 		
 		
-		if(search_on_cache(data["email"].asString(),data["password"].asString()) == nullptr){
-			std::string query = "select name,surname,email,auth_token,password from User where email = '" + data["email"].asString() + "' and password = '" + data["password"].asString() + "'";
+		if(search_on_cache(data["Email"].asString(),data["Password"].asString()) == nullptr){
+			std::string query = "select name,surname,email,auth_token,password from User where email = '" + data["Email"].asString() + "' and password = '" + data["Password"].asString() + "'";
 			sql::ResultSet  *res;
 			res = MYSQL::Select_Query(query);
 			if( res->rowsCount() == 0){
@@ -73,7 +73,7 @@
 					Controller::users.push_back(user);
 					User_mutex.unlock();
 				}
-				response["status"] = "succesfull";   
+				response["status"] = "Succesfull";   
 			}
 			delete res;
 		}
@@ -112,7 +112,7 @@
 		User * Current_User = Controller::Auth(data["auth"].asString());
 
 		if(Current_User == nullptr){
-			response["status"] = "failed";
+			response["status"] = "Failed";
 			response["error"] = "Unauthorized";
 			response["data"] = "";
 			return response;
@@ -137,7 +137,7 @@
 			sql::ResultSet *res = MYSQL::Select_Query(query);
 
 			if( res->rowsCount() == 0){
-            response["status"] = "failed";
+            response["status"] = "Failed";
             response["error"] = "Ambiente not Found";
         	}
 			else
@@ -149,7 +149,7 @@
 					Current_User->getAmbienti()->push_back(ambiente);
 					User_mutex.unlock();
             }
-            	response["status"] = "succesfull";
+            	response["status"] = "Succesfull";
 				response["data"]["broker_host"] = "localhost:8082"; 
 				
 			}

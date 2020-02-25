@@ -20,7 +20,7 @@ type Request struct {
 	Auth string `json:"auth"`
 }
 
-func buildRequest(function string, auth string, data interface{}) interface{} {
+func buildRequest(function, auth string, data interface{}) interface{} {
 	request := struct {
 		Function string `json:"function"`
 		Data interface{} `json:"data"`
@@ -61,6 +61,7 @@ func socketSend(conn net.Conn, jsonReq []byte) {
 	errorCheck(err, "Couldn't send data")
 }
 
+// TODO Handle messages bigger than buffer
 func socketReceive(conn net.Conn) []byte {
 	buff := make([]byte, 8192) // Buffered reads from socket
 	for {
@@ -78,7 +79,7 @@ func socketReceive(conn net.Conn) []byte {
 }
 
 // Accepts request parameters, returns JSON as map[string]interface{} on the channel
-func SocketCommunicate(function string, auth string, data interface{}, rx chan map[string]interface{}) {
+func SocketCommunicate(function, auth string, data interface{}, rx chan map[string]interface{}) {
 
 	conn := socketConnect(ip, port)
 	defer conn.Close()
