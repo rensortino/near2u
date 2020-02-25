@@ -78,8 +78,8 @@
 			delete res;
 		}
 		else{
-			response["status"] = "succesfull";
-			response["data"]["auth"] = search_on_cache(data["email"].asString(),data["password"].asString())->getauth_token();
+			response["status"] = "Succesfull";
+			response["data"]["auth"] = search_on_cache(data["Email"].asString(),data["Password"].asString())->getauth_token();
 		}
 			return response;  
 
