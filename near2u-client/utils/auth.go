@@ -25,7 +25,7 @@ func Login(responseMsg chan string, token chan string, email string, password st
 	if res["status"] == "Succesfull" {
 
 		// Accesses nested json
-		token <- res["data"].(map[string]interface{})["token"].(string)
+		token <- res["data"].(map[string]interface{})["auth"].(string)
 		responseMsg <- "User Authenticated"
 	}else {
 		token <- "NULL"

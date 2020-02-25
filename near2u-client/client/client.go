@@ -130,8 +130,11 @@ func (c * Client) SelectEnv(envName string, topicCh chan string) {
 	go utils.SocketCommunicate("seleziona_ambiente", c.LoggedUser, data, rx)
 
 	res := <- rx
-
-	uri, err := url.Parse("tcp://" + res["address"].(string))
+	if(res["status"] == "Failed"){
+		log.Println("errore")
+		//aggiungi semantica di errore
+	}
+	uri, err := url.Parse("tcp://" + res["data"].(map[string]interface{})["broker_host"].(string))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -140,8 +143,8 @@ func (c * Client) SelectEnv(envName string, topicCh chan string) {
 		c.MQTTClient = utils.MQTTConnect(c.ID, uri)
 	}
 
-	log.Println(res["topic"])
+	log.Println(res["data"].(map[string]interface{})["topic"])
 
-	topicCh <- res["topic"].(string)
+	topicCh <- res["data"].(map[string]interface{})["topic"].(string)
 	close(topicCh)
 }

@@ -129,7 +129,11 @@ func getRegisterWidget() * qt.QWidget{
 		go utils.Register(rx, name.Text(), surname.Text(), email.Text(), password.Text())
 		// TODO Verify server response correctness
 		res := <- rx
-		qt.QMessageBox_Information(nil, "OK", res["message"].(string), qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		if res["status"] == "Succesfull"{
+			qt.QMessageBox_Information(nil, "OK", res["status"].(string), qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		} else {
+			qt.QMessageBox_Information(nil, "Error", res["error"].(string), qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		}
 		changeWindow(widget, getHomepageWidget())
 
 	})
