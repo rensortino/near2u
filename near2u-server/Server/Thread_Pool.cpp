@@ -5,7 +5,9 @@
     enum StringValue { Default,
                         Register, 
                         Login, 
-                        Selezione_Ambiente
+                        Seleziona_Ambiente,
+                        Configura_Ambiente,
+                        Inserisci_Sensori
                         };
     static std::map<std::string, StringValue> s_mapStringValues;
 
@@ -75,10 +77,16 @@
             case Login:
                 response =  controller->Login(requestjson["data"]).toStyledString();  
                 break;
-            case Selezione_Ambiente:
+            case Seleziona_Ambiente:
                 response =  controller->Seleziona_Ambiente(requestjson).toStyledString(); 
                 break;
-
+            
+            case Configura_Ambiente:
+                response = controller->Configura_ambiente(requestjson).toStyledString();
+                break;
+            case Inserisci_Sensori:
+                response = controller->Inserisci_Sensori(requestjson).toStyledString();
+                break;
             default:
                 response = "{\"status\" : \"Service not avaible\"}"; 
                 break;
@@ -93,7 +101,9 @@
     {
     s_mapStringValues["register"] = Register;
     s_mapStringValues["login"] = Login;
-    s_mapStringValues["seleziona_ambiente"] = Selezione_Ambiente;
+    s_mapStringValues["seleziona_ambiente"] = Seleziona_Ambiente;
+    s_mapStringValues["configura_ambiente"] = Configura_Ambiente;
+    s_mapStringValues["inserisci_sensori"] = Inserisci_Sensori;
     
     std::cout << "s_mapStringValues contains " 
         << s_mapStringValues.size() 

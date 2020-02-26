@@ -3,11 +3,11 @@
 #include "Ambiente.hpp"
 
 
-    Ambiente::Ambiente(std::string name, int cod_ambiente){
+    Ambiente::Ambiente(std::string name, std::string cod_ambiente){
         Ambiente::Nome = name;
         Ambiente::codAmbiente = cod_ambiente;
     }
-    int Ambiente::getcodAmbiente(){
+    std::string Ambiente::getcodAmbiente(){
         return Ambiente::codAmbiente;
     }
     std::string Ambiente::getNome(){

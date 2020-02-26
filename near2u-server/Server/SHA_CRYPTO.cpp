@@ -12,12 +12,11 @@
         char token[strlen(aux)];
 
         SHA1((unsigned char *)aux, strlen(aux), (unsigned char *)token);
-
         char  result [strlen(aux)];
-        for(int i = 0; i < 30 ; i++)
-            sprintf(&result[i*2], "%02x", (unsigned int)token[i]);
+        for(int i = 0; i < strlen(aux) ; i++)
+            sprintf(&result[i], "%02x", (unsigned int)token[i]);
         
-        std::string token_string (token);
+        std::string token_string (result);
         return token_string;
 
 

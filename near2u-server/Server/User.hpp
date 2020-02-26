@@ -17,12 +17,16 @@ public:
      std::string getPassword();
      std::string getauth_token();
      std::list<Ambiente> * getAmbienti();
+     bool getAdmin();
+     void setAdmin(bool role);
+    Ambiente * getAmbiente(std::string cod_Ambiente);
 private:
     std::string name;
     std::string surname;
     std::string email;
     std::string password;
     std::string auth_token;
+    bool admin;
  
     std::list<Ambiente> ambienti;
 	

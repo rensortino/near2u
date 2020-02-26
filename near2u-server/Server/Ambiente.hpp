@@ -5,19 +5,19 @@
 #include <iostream>
 #include <assert.h>
 
-#include "./after/Sensore.h"
+#include "Sensore.h"
 
 class Ambiente
 {
 	public:
-	Ambiente( std::string name, int cod);
+	Ambiente( std::string name, std::string cod);
 	std::string getNome();
-	int getcodAmbiente();
+	std::string getcodAmbiente();
 	std::list<Sensore> * getSensori();
 private:
 	std::string Nome;
 
-	int codAmbiente;
+	std::string codAmbiente;
 
 	std::list<Sensore> sensori;
 

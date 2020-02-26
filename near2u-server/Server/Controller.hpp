@@ -28,6 +28,8 @@ public:
 	Json::Value Seleziona_Ambiente(Json::Value data);
 	Json::Value Register(Json::Value data);
 	Json::Value Login(Json::Value data);
+	Json::Value Configura_ambiente(Json::Value data);
+	Json::Value Inserisci_Sensori(Json::Value data);
 	
 
 };
