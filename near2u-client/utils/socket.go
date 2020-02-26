@@ -79,6 +79,7 @@ func socketReceive(conn net.Conn) []byte {
 }
 
 // Accepts request parameters, returns JSON as map[string]interface{} on the channel
+// TODO substitute channel with return value
 func SocketCommunicate(function, auth string, data interface{}, rx chan map[string]interface{}) {
 
 	conn := socketConnect(ip, port)

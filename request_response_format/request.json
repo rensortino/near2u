@@ -21,3 +21,18 @@
 {
     "name": ""
 }
+
+// data format for crea_ambiente
+{
+    "name": ""
+}
+
+// data format for aggiungi_sensori
+{
+    "envName": "",
+    "sensors":[
+        {"name": "", "kind": ""}
+        ---
+        {"name": "", "kind": ""}
+    ]
+}
