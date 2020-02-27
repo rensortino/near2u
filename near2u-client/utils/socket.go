@@ -15,16 +15,16 @@ var (
 )
 
 type Request struct {
-	Function string `json:"function"`
-	Data interface {} `json:"data"`
-	Auth string `json:"auth"`
+	Function string      `json:"function"`
+	Data     interface{} `json:"data"`
+	Auth     string      `json:"auth"`
 }
 
 func buildRequest(function, auth string, data interface{}) interface{} {
 	request := struct {
-		Function string `json:"function"`
-		Data interface{} `json:"data"`
-		Auth string `json:"auth"`
+		Function string      `json:"function"`
+		Data     interface{} `json:"data"`
+		Auth     string      `json:"auth"`
 	}{
 		function,
 		data,
@@ -43,7 +43,7 @@ func errorCheck(err error, msg string) {
 }
 
 // SocketConnect binds to a remote socket
-func socketConnect(ip string, port int) net.Conn{
+func socketConnect(ip string, port int) net.Conn {
 	addr := strings.Join([]string{ip, strconv.Itoa(port)}, ":")
 	conn, err := net.Dial("tcp", addr)
 
@@ -69,7 +69,6 @@ func socketReceive(conn net.Conn) []byte {
 		if err != nil && err.Error() == "EOF" {
 			log.Println("EOF Reached, breaking loop")
 			return []byte("EOF")
-			break
 		}
 		errorCheck(err, "Error receiving data")
 		log.Printf("Receive: %s\n", buff[:n])

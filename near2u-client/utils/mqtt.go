@@ -2,10 +2,11 @@ package utils
 
 import (
 	"fmt"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"net/url"
 	"time"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 func createClientOptions(clientID string, uri *url.URL) *mqtt.ClientOptions {

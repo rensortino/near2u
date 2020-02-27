@@ -1,32 +1,33 @@
 package client
 
 import (
-	"../utils"
 	"encoding/json"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"net/url"
 	"strconv"
+
+	"../utils"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 type Client struct {
-	ID string
+	ID         string
 	LoggedUser string
 	MQTTClient mqtt.Client
 }
 
 type Sensor struct {
-	Code int `json:"code"`
+	Code int    `json:"code"`
 	Name string `json:name`
 	Kind string `json:kind`
 }
 
 type Environment struct {
-	Name string `json:name`
+	Name      string                 `json:name`
 	SensorMap map[string]interface{} `json:sensors`
 }
 
-var clientInstance * Client
+var clientInstance *Client
 
 // Implements singleton pattern
 func GetClientInstance() *Client {
@@ -43,40 +44,37 @@ func GetClientInstance() *Client {
 }
 
 // Gets an array of Environment IDs from the server, to be displayed on the GUI for selection
-func (c * Client) GetEnvList() []string {
+func (c *Client) GetEnvList(envListCh chan []Environment, errCh chan string) {
 
-	/*
-	request := struct {
-		Function string
-		Auth string
-	} {
-		"getEnvList"
-		clientInstance.LoggedUser
+	rx := make(chan map[string]interface{})
+
+	go utils.SocketCommunicate("visualizza_ambienti", c.LoggedUser, nil, rx)
+
+	res := <-rx
+	if res["status"] == "Failed" {
+		errCh <- res["error"].(string)
+		return
 	}
 
-	jsonReq, _ := json.Marshal(request)
-
-	rx := make(chan []byte)
-	go SocketCommunicate(jsonReq, rx)
-
-	var envList struct {
-	Environments [] string `json:"environments"`
-	} {}
-
-	json.Unmarshal(<- rx, &envList)
-	log.Println(envList.Environments)
-
-	 */
-
-	// TODO Delete test string
-	var test = make([]string, 10)
-	for i := 0; i < 10; i++ {
-		test[i] = "Test " + strconv.Itoa(i)
-	}
-	return test
+	envListCh <- res["environments"].([]Environment)
 }
 
-func (c * Client) GetSensorData(topic string, rtCh chan map[string]interface{}) {
+func (c *Client) GetSensorList(sensorListCh chan []Sensor, errCh chan string) {
+
+	rx := make(chan map[string]interface{})
+
+	go utils.SocketCommunicate("visualizza_sensori", c.LoggedUser, nil, rx)
+
+	res := <-rx
+	if res["status"] == "Failed" {
+		errCh <- res["error"].(string)
+		return
+	}
+
+	sensorListCh <- res["sensors"].([]Sensor)
+}
+
+func (c *Client) GetSensorData(topic string, rtCh chan map[string]interface{}) {
 
 	c.MQTTClient.Subscribe(topic, 0, func(client mqtt.Client, msg mqtt.Message) {
 		// Executes every time a message is published on the topic
@@ -100,20 +98,20 @@ func (c * Client) GetSensorData(topic string, rtCh chan map[string]interface{}) 
 }
 
 // Gracefully stops getting data from the broker
-func (c * Client) StopGettingData(topic string, rtCh chan map[string]interface{}, quit chan bool) {
+func (c *Client) StopGettingData(topic string, rtCh chan map[string]interface{}, quit chan bool) {
 	c.MQTTClient.Unsubscribe(topic)
 	// Empties the channel before closing it
 	select {
-		case <- rtCh:
-			close(rtCh)
-		default:
-			close(rtCh)
+	case <-rtCh:
+		close(rtCh)
+	default:
+		close(rtCh)
 	}
 	quit <- true
 	close(quit)
 }
 
-func (c * Client) SelectEnv(envName string, topicCh, errCh chan string) {
+func (c *Client) SelectEnv(envName string, topicCh, errCh chan string) {
 
 	data := struct {
 		Name string `json:"name"`
@@ -126,7 +124,7 @@ func (c * Client) SelectEnv(envName string, topicCh, errCh chan string) {
 	//Returns broker's address on rx channel
 	go utils.SocketCommunicate("seleziona_ambiente", c.LoggedUser, data, rx)
 
-	res := <- rx
+	res := <-rx
 	if res["status"] == "Failed" {
 		errCh <- res["error"].(string)
 		return
@@ -147,11 +145,11 @@ func (c * Client) SelectEnv(envName string, topicCh, errCh chan string) {
 	close(topicCh)
 }
 
-func (c * Client) CreateEnv(envName string, envCh chan * Environment, errCh chan string) {
+func (c *Client) CreateEnv(envName string, envCh chan *Environment, errCh chan string) {
 
 	data := struct {
 		Name string `json:"name"`
-	} {
+	}{
 		envName,
 	}
 
@@ -159,10 +157,10 @@ func (c * Client) CreateEnv(envName string, envCh chan * Environment, errCh chan
 
 	go utils.SocketCommunicate("configura_ambiente", c.LoggedUser, data, rx)
 
-	res := <- rx
+	res := <-rx
 
-	if res["status"] ==  "Succesfull" {
-		newEnv := &Environment {
+	if res["status"] == "Succesfull" {
+		newEnv := &Environment{
 			envName,
 			make(map[string]interface{}),
 		}
@@ -172,8 +170,8 @@ func (c * Client) CreateEnv(envName string, envCh chan * Environment, errCh chan
 	}
 }
 
-func (c * Client) AddSensor(code, name, kind string, newEnv * Environment,
-							sensorCh chan interface{}, errCh chan string) {
+func (c *Client) AddSensor(code, name, kind string, newEnv *Environment,
+	sensorCh chan interface{}, errCh chan string) {
 
 	if !(len(newEnv.SensorMap) == 0) {
 		log.Println(len(newEnv.SensorMap))
@@ -190,7 +188,7 @@ func (c * Client) AddSensor(code, name, kind string, newEnv * Environment,
 		errCh <- "Sensor Code must be integer"
 		return
 	}
-	newSensor := Sensor {
+	newSensor := Sensor{
 		intCode,
 		name,
 		kind,
@@ -200,7 +198,7 @@ func (c * Client) AddSensor(code, name, kind string, newEnv * Environment,
 
 }
 
-func (c * Client) Done(newEnv * Environment, resCh, errCh chan string) {
+func (c *Client) Done(newEnv *Environment, resCh, errCh chan string) {
 
 	sensorList := make([]Sensor, 0)
 
@@ -211,8 +209,8 @@ func (c * Client) Done(newEnv * Environment, resCh, errCh chan string) {
 
 	data := struct {
 		Sensors []Sensor `json:"sensors"`
-		EnvName string `json:"envName"`
-	} {
+		EnvName string   `json:"envName"`
+	}{
 		sensorList,
 		newEnv.Name,
 	}
@@ -221,9 +219,9 @@ func (c * Client) Done(newEnv * Environment, resCh, errCh chan string) {
 
 	go utils.SocketCommunicate("inserisci_sensori", c.LoggedUser, data, rx)
 
-	res := <- rx
+	res := <-rx
 
-	if res["status"] ==  "Succesfull" {
+	if res["status"] == "Succesfull" {
 		resCh <- res["status"].(string)
 	} else {
 		errCh <- res["error"].(string)
