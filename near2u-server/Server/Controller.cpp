@@ -167,7 +167,7 @@
 	Json::Value Controller::Configura_ambiente(Json::Value data){
 		Json::Value response;
 		User * Current_User = Controller::Auth(data["auth"].asString());
-		std::string cod_ambiente = Current_User ->getemail() + data["data"]["name"].asString();
+		
 
 		if(Current_User == nullptr || Current_User->getAdmin() == false){
 			response["status"] = "Failed";
@@ -175,6 +175,7 @@
 			response["data"] = "";
 			return response;
 		}
+		std::string cod_ambiente = Current_User ->getemail() + data["data"]["name"].asString();
 
 		
 		std::string query = "call Ambiente_insert ('"+data["data"]["name"].asString() +"','"+ Current_User->getemail() + "','"+ cod_ambiente+"');";
@@ -200,7 +201,6 @@
 	Json::Value Controller::Inserisci_Sensori(Json::Value data){
 		Json::Value response;
 		User * Current_User = Controller::Auth(data["auth"].asString());
-		std::string cod_ambiente = Current_User ->getemail() + data["data"]["envName"].asString();
 
 		if(Current_User == nullptr || Current_User->getAdmin() == false){
 			response["status"] = "Failed";
@@ -208,6 +208,7 @@
 			response["data"] = "";
 			return response;
 		}
+		std::string cod_ambiente = Current_User ->getemail() + data["data"]["envName"].asString();
 		 auto entriesArray = data["data"]["sensors"];
 		 Json::Value::iterator sensors_to_add;
 		 for (sensors_to_add = entriesArray.begin(); sensors_to_add != entriesArray.end();sensors_to_add ++){

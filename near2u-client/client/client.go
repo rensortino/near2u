@@ -95,7 +95,7 @@ func (c * Client) GetSensorData(topic string, rtCh chan map[string]interface{}) 
 			}}
 		*/
 
-		rtCh <- sensors
+		rtCh <- sensors["SensorMap"].(map[string]interface{})
 	})
 }
 
@@ -157,7 +157,7 @@ func (c * Client) CreateEnv(envName string, envCh chan * Environment, errCh chan
 
 	rx := make(chan map[string]interface{})
 
-	go utils.SocketCommunicate("createEnv", c.LoggedUser, data, rx)
+	go utils.SocketCommunicate("configura_ambiente", c.LoggedUser, data, rx)
 
 	res := <- rx
 
@@ -211,18 +211,20 @@ func (c * Client) Done(newEnv * Environment, resCh, errCh chan string) {
 
 	data := struct {
 		Sensors []Sensor `json:"sensors"`
+		EnvName string `json:"envName"`
 	} {
 		sensorList,
+		newEnv.Name,
 	}
 
 	rx := make(chan map[string]interface{})
 
-	go utils.SocketCommunicate("addSensors", c.LoggedUser, data, rx)
+	go utils.SocketCommunicate("inserisci_sensori", c.LoggedUser, data, rx)
 
 	res := <- rx
 
 	if res["status"] ==  "Succesfull" {
-		resCh <- res["data"].(string)
+		resCh <- res["status"].(string)
 	} else {
 		errCh <- res["error"].(string)
 	}
