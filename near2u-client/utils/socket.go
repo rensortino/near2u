@@ -100,4 +100,5 @@ func SocketCommunicate(function, auth string, data interface{}, rx chan map[stri
 		json.Unmarshal(eof, &jsonRes)
 	}
 	rx <- jsonRes
+	close(rx)
 }
