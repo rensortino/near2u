@@ -14,6 +14,7 @@ class Ambiente
 	std::string getNome();
 	std::string getcodAmbiente();
 	std::list<Sensore> * getSensori();
+	Sensore * getSensore(int cod_sensore);
 private:
 	std::string Nome;
 

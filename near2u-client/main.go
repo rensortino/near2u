@@ -269,9 +269,9 @@ func getConfigureEnvWidget() *qt.QWidget {
 		case env := <- envCh:
 			//currentEnv = env
 			changeWindow(widget, getAddSensorsWidget(env))
-		case error := <-errCh:
-			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-		}
+		case err := <- errCh:
+			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+			}
 	})
 	layout.AddWidget(addSensorsBtn, 0, 0)
 
@@ -434,7 +434,7 @@ func getAddSensorsWidget(newEnv *client.Environment) *qt.QWidget {
 
 		resCh := make(chan string)
 		errCh := make(chan string)
-		go clientInstance.Done(newEnv.Name, sensorList, resCh, errCh)
+		go clientInstance.Done(newEnv.Name, "inserisci_sensori", sensorList, resCh, errCh)
 		select {
 		case res := <-resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
@@ -465,7 +465,7 @@ func getDeleteSensorsWidget(env *client.Environment) *qt.QWidget {
 	sensorsCB := qt.NewQComboBox(nil)
 	sensorsCB.SetEditable(false)
 
-	sensorsCh := make (chan []string)
+	sensorsCh := make (chan []client.Sensor)
 	errCh := make (chan string)
 
 	// Gets all environments from server and shows them in a combo box
@@ -473,7 +473,11 @@ func getDeleteSensorsWidget(env *client.Environment) *qt.QWidget {
 
 	select {
 	case sensors := <- sensorsCh:
-		sensorsCB.AddItems(sensors)
+		for _, sensor := range sensors {
+			sensorName := sensor.Name
+			// TODO Check validity
+			sensorsCB.AddItem(sensorName, nil)
+		}
 	case error := <- errCh:
 		qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 	}
@@ -492,7 +496,8 @@ func getDeleteSensorsWidget(env *client.Environment) *qt.QWidget {
 		go clientInstance.DeleteSensor(code.Text(), env, sensorList, sensorCh, errCh)
 		select {
 		case sensor := <-sensorCh:
-			successString := fmt.Sprintf("Sensor: %s Selected for deletion", sensor.(*client.Sensor).Name)
+			//TODO Change sensor to sensor.(*client.Sensor).Name
+			successString := fmt.Sprintf("Sensor: %s Selected for deletion", sensor)
 			qt.QMessageBox_Information(nil, "OK", successString, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		case error := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
@@ -505,11 +510,12 @@ func getDeleteSensorsWidget(env *client.Environment) *qt.QWidget {
 		sensorList := make([]client.Sensor, 0)
 		// Constructs the list to send to the server
 		for _, sensor := range env.SensorMap {
+			//TODO Sensor type must be Sensor
 			sensorList = append(sensorList, sensor.(client.Sensor))
 		}
 		resCh := make(chan string)
 		errCh := make(chan string)
-		go clientInstance.Done(env.Name, sensorList, resCh, errCh)
+		go clientInstance.Done(env.Name, "elimina_sensori", sensorList, resCh, errCh)
 		select {
 		case res := <-resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)

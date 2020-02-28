@@ -20,10 +20,45 @@
 #define DB "apl_project"
 
 namespace MYSQL{
-    Json::Value insert( std::string query){
-            Json::Value response;
-            response["status"] = "";
-		    response["error"] = "";
+    bool Queries (std::list<std::string> queries){
+        bool correct = true;
+         try {
+
+            sql::Driver* driver = get_driver_instance();
+            std::unique_ptr<sql::Connection> con(driver->connect(HOST, USER, PASS));
+            con->setSchema(DB);
+            std::unique_ptr<sql::Statement> stmt(con->createStatement());
+            std::list<std::string>::iterator query_iterator;
+            for(query_iterator = queries.begin(); query_iterator != queries.end();query_iterator ++ ){
+                if (correct == true){
+                    std::cout << *query_iterator << std::endl;
+                    stmt->execute(*query_iterator);
+                }
+                else{
+                    stmt->execute("rollback");
+                    break;
+                }
+                
+            }
+            con.reset(nullptr);
+            stmt.reset(nullptr);
+            } catch (sql::SQLException &e ) {
+                correct = false;
+                std::cout << "# ERR: SQLException in " << __FILE__;
+                std::cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << std::endl;
+                std::cout << "# ERR: " << e.what();
+                std::cout << " (MySQL error code: " << e.getErrorCode();
+                std::cout << ", SQLState: " << e.getSQLState() << " )" << std::endl;
+                
+
+            }
+        
+
+        return correct;
+
+    }
+    int Query( std::string query){
+           
 
         try {
 
@@ -42,17 +77,12 @@ namespace MYSQL{
                 std::cout << "# ERR: " << e.what();
                 std::cout << " (MySQL error code: " << e.getErrorCode();
                 std::cout << ", SQLState: " << e.getSQLState() << " )" << std::endl;
-
-                response["status"] = "Error";
-                response["error"] = e.what();
                 
 
-                return response;
+                return 1;
             }
 
-        response["status"] = "Succesfull";
-        response["error"] = "";
-        return response;
+        return 0;
     }
 
     sql::ResultSet* Select_Query(std::string query){

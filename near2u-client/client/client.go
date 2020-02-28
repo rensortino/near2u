@@ -17,13 +17,13 @@ type Client struct {
 
 type Sensor struct {
 	Code int    `json:"code"`
-	Name string `json:name`
-	Kind string `json:kind`
+	Name string `json:"name"`
+	Kind string `json:"kind"`
 }
 
 type Environment struct {
-	Name      string                 `json:name`
-	SensorMap map[string]interface{} `json:sensors`
+	Name      string                 `json:"envname"`
+	SensorMap map[int]interface{} `json:"sensors"`
 }
 
 var clientInstance *Client
@@ -55,14 +55,20 @@ func (c *Client) GetEnvList(envListCh chan []string, errCh chan string) {
 		return
 	}
 
-	envListCh <- res["data"].(map[string]interface{})["environments"].([]string)
+	environments := make([]string, 0)
+
+	for _, env := range res["data"].(map[string]interface{})["environments"].([]interface{}) {
+		log.Println(env)
+		environments = append(environments, env.(string))
+	}
+	envListCh <- environments
 	close(envListCh)
 }
 
-func (c *Client) GetSensorList(envName string, sensorListCh chan []string, errCh chan string) {
+func (c *Client) GetSensorList(envName string, sensorListCh chan []Sensor, errCh chan string) {
 
 	data := struct {
-		EnvName string
+		EnvName string `json:"envname"`
 	} {
 		envName,
 	}
@@ -78,7 +84,16 @@ func (c *Client) GetSensorList(envName string, sensorListCh chan []string, errCh
 	}
 
 	// Returns a list of sensor codes
-	sensorListCh <- res["data"].(map[string]interface{})["sensors"].([]string)
+	sensorList := res["data"].(map[string]interface{})["sensors"]
+	sensors := make([] Sensor, 0)
+
+	for _, sensorJSON := range sensorList.([]interface{}) {
+		sensor := &Sensor{}
+		sensorData, _ := json.Marshal(sensorJSON)
+		json.Unmarshal(sensorData, sensor)
+		sensors = append(sensors, * sensor)
+	}
+	sensorListCh <- sensors
 }
 
 func (c *Client) GetSensorData(topic string, rtCh chan map[string]interface{}) {
@@ -143,26 +158,33 @@ func (c *Client) GetTopicAndUri(envName string, topicCh, uriCh, errCh chan strin
 	close(uriCh)
 }
 
+// TODO Change sensorlist type to []Sensor
 func (c * Client) SelectEnv(envName string, envCh chan * Environment, errCh chan string) {
 
-	data := struct {
-		Name string `json:"name"`
-	}{
+	sensorListCh := make(chan [] Sensor)
+
+	go c.GetSensorList(envName, sensorListCh, errCh)
+
+	env := &Environment{
 		envName,
+		make(map[int]interface{}),
 	}
 
-	rx := make(chan map[string]interface{})
-
-	//Returns broker's address on rx channel
-	go utils.SocketCommunicate("seleziona_ambiente", c.LoggedUser, data, rx)
-
-	res := <-rx
-	if res["status"] == "Failed" {
-		errCh <- res["error"].(string)
+	select {
+	case res := <-sensorListCh:
+		// TODO Change with sensor code
+		for _, sensor := range res {
+			env.SensorMap[sensor.Code] = sensor
+			log.Println(env.SensorMap[sensor.Code])
+		}
+	case err := <- errCh:
+		log.Println(err)
+		errCh <- err
 		return
 	}
+	
 
-	envCh <- res["data"].(map[string]interface{})["environment"].(* Environment)
+	envCh <- env
 	close(envCh)
 }
 
@@ -183,7 +205,7 @@ func (c *Client) CreateEnv(envName string, envCh chan *Environment, errCh chan s
 	if res["status"] == "Succesfull" {
 		newEnv := &Environment{
 			envName,
-			make(map[string]interface{}),
+			make(map[int]interface{}),
 		}
 		envCh <- newEnv
 	} else {
@@ -191,38 +213,48 @@ func (c *Client) CreateEnv(envName string, envCh chan *Environment, errCh chan s
 	}
 }
 
+// TODO Change sensorlist type to []Sensor
 func (c *Client) AddSensor(code, name, kind string, env *Environment,
 	sensorCh chan interface{}, errCh chan string) {
 
-	if !(len(env.SensorMap) == 0) {
-		_, found := env.SensorMap[code]
-		if found {
-			errCh <- "Code already in use, please choose another one"
-			return
-		}
-	}
 	intCode, err := strconv.Atoi(code)
 	if err != nil {
 		errCh <- "Sensor Code must be integer"
 		return
 	}
+
+	if !(len(env.SensorMap) == 0) {
+		_, found := env.SensorMap[intCode]
+		if found {
+			errCh <- "Code already in use, please choose another one"
+			return
+		}
+	}
+	
 	newSensor := Sensor{
 		intCode,
 		name,
 		kind,
 	}
-	env.SensorMap[code] = newSensor
+	env.SensorMap[intCode] = newSensor
 	sensorCh <- &newSensor
 
 }
 
+// TODO Change sensorlist type to []Sensor
 func (c *Client) DeleteSensor(code string, env *Environment, sensorList []Sensor, sensorCh chan interface{}, errCh chan string) {
+
+	intCode, err := strconv.Atoi(code)
+	if err != nil {
+		errCh <- "Sensor Code must be integer"
+		return
+	}
 
 	if len(env.SensorMap) == 0 {
 		errCh <- "Empty Environment, no sensors to delete"
 		return
 	}
-	sensor, found := env.SensorMap[code]
+	sensor, found := env.SensorMap[intCode]
 	if found {
 		sensorList = append(sensorList, sensor.(Sensor))
 		sensorCh <- sensor.(Sensor)
@@ -232,11 +264,11 @@ func (c *Client) DeleteSensor(code string, env *Environment, sensorList []Sensor
 
 }
 
-func (c *Client) Done(envName string, sensorList [] Sensor, resCh, errCh chan string) {
+func (c *Client) Done(envName, function string, sensorList [] Sensor, resCh, errCh chan string) {
 
 	data := struct {
 		Sensors []Sensor `json:"sensors"`
-		EnvName string   `json:"envName"`
+		EnvName string   `json:"envname"`
 	}{
 		sensorList,
 		envName,
@@ -244,7 +276,7 @@ func (c *Client) Done(envName string, sensorList [] Sensor, resCh, errCh chan st
 
 	rx := make(chan map[string]interface{})
 
-	go utils.SocketCommunicate("inserisci_sensori", c.LoggedUser, data, rx)
+	go utils.SocketCommunicate(function, c.LoggedUser, data, rx)
 
 	res := <-rx
 
