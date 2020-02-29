@@ -1,12 +1,10 @@
 package client
 
 import (
-	"encoding/json"
-	"log"
-	"strconv"
-
 	"../utils"
+	"encoding/json"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"log"
 )
 
 type Client struct {
@@ -19,11 +17,6 @@ type Sensor struct {
 	Code int    `json:"code"`
 	Name string `json:name`
 	Kind string `json:kind`
-}
-
-type Environment struct {
-	Name      string                 `json:name`
-	SensorMap map[string]interface{} `json:sensors`
 }
 
 var clientInstance *Client
@@ -45,11 +38,8 @@ func GetClientInstance() *Client {
 // Gets an array of Environment IDs from the server, to be displayed on the GUI for selection
 func (c *Client) GetEnvList(envListCh chan []string, errCh chan string) {
 
-	rx := make(chan map[string]interface{})
+	res := utils.SocketCommunicate("visualizza_ambienti", c.LoggedUser, nil)
 
-	go utils.SocketCommunicate("visualizza_ambienti", c.LoggedUser, nil, rx)
-
-	res := <-rx
 	if res["status"] == "Failed" {
 		errCh <- res["error"].(string)
 		return
@@ -57,28 +47,6 @@ func (c *Client) GetEnvList(envListCh chan []string, errCh chan string) {
 
 	envListCh <- res["data"].(map[string]interface{})["environments"].([]string)
 	close(envListCh)
-}
-
-func (c *Client) GetSensorList(envName string, sensorListCh chan []string, errCh chan string) {
-
-	data := struct {
-		EnvName string
-	} {
-		envName,
-	}
-
-	rx := make(chan map[string]interface{})
-
-	go utils.SocketCommunicate("visualizza_sensori", c.LoggedUser, data, rx)
-
-	res := <-rx
-	if res["status"] == "Failed" {
-		errCh <- res["error"].(string)
-		return
-	}
-
-	// Returns a list of sensor codes
-	sensorListCh <- res["data"].(map[string]interface{})["sensors"].([]string)
 }
 
 func (c *Client) GetSensorData(topic string, rtCh chan map[string]interface{}) {
@@ -126,12 +94,9 @@ func (c *Client) GetTopicAndUri(envName string, topicCh, uriCh, errCh chan strin
 		envName,
 	}
 
-	rx := make(chan map[string]interface{})
+	//Returns broker's address
+	res := utils.SocketCommunicate("topic_ambiente", c.LoggedUser, data)
 
-	//Returns broker's address on rx channel
-	go utils.SocketCommunicate("topic_ambiente", c.LoggedUser, data, rx)
-
-	res := <-rx
 	if res["status"] == "Failed" {
 		errCh <- res["error"].(string)
 		return
@@ -151,14 +116,12 @@ func (c * Client) SelectEnv(envName string, envCh chan * Environment, errCh chan
 		envName,
 	}
 
-	rx := make(chan map[string]interface{})
-
 	//Returns broker's address on rx channel
-	go utils.SocketCommunicate("seleziona_ambiente", c.LoggedUser, data, rx)
+	res := utils.SocketCommunicate("seleziona_ambiente", c.LoggedUser, data)
 
-	res := <-rx
 	if res["status"] == "Failed" {
 		errCh <- res["error"].(string)
+		close(errCh)
 		return
 	}
 
@@ -174,83 +137,22 @@ func (c *Client) CreateEnv(envName string, envCh chan *Environment, errCh chan s
 		envName,
 	}
 
-	rx := make(chan map[string]interface{})
-
-	go utils.SocketCommunicate("configura_ambiente", c.LoggedUser, data, rx)
-
-	res := <-rx
+	res := utils.SocketCommunicate("configura_ambiente", c.LoggedUser, data)
 
 	if res["status"] == "Succesfull" {
 		newEnv := &Environment{
 			envName,
 			make(map[string]interface{}),
+			0,
 		}
 		envCh <- newEnv
+		close(envCh)
+		return
 	} else {
 		errCh <- res["error"].(string)
-	}
-}
-
-func (c *Client) AddSensor(code, name, kind string, env *Environment,
-	sensorCh chan interface{}, errCh chan string) {
-
-	if !(len(env.SensorMap) == 0) {
-		_, found := env.SensorMap[code]
-		if found {
-			errCh <- "Code already in use, please choose another one"
-			return
-		}
-	}
-	intCode, err := strconv.Atoi(code)
-	if err != nil {
-		errCh <- "Sensor Code must be integer"
+		close(errCh)
 		return
 	}
-	newSensor := Sensor{
-		intCode,
-		name,
-		kind,
-	}
-	env.SensorMap[code] = newSensor
-	sensorCh <- &newSensor
-
 }
 
-func (c *Client) DeleteSensor(code string, env *Environment, sensorList []Sensor, sensorCh chan interface{}, errCh chan string) {
 
-	if len(env.SensorMap) == 0 {
-		errCh <- "Empty Environment, no sensors to delete"
-		return
-	}
-	sensor, found := env.SensorMap[code]
-	if found {
-		sensorList = append(sensorList, sensor.(Sensor))
-		sensorCh <- sensor.(Sensor)
-	} else {
-		errCh <- "Sensor not found"
-	}
-
-}
-
-func (c *Client) Done(envName string, sensorList [] Sensor, resCh, errCh chan string) {
-
-	data := struct {
-		Sensors []Sensor `json:"sensors"`
-		EnvName string   `json:"envName"`
-	}{
-		sensorList,
-		envName,
-	}
-
-	rx := make(chan map[string]interface{})
-
-	go utils.SocketCommunicate("inserisci_sensori", c.LoggedUser, data, rx)
-
-	res := <-rx
-
-	if res["status"] == "Succesfull" {
-		resCh <- res["status"].(string)
-	} else {
-		errCh <- res["error"].(string)
-	}
-}

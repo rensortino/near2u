@@ -10,10 +10,7 @@ func Login(responseMsg, token chan string, email, password string) {
 		password,
 	}
 
-	rx := make(chan map[string]interface{})
-	go SocketCommunicate("login", "", data, rx)
-
-	res := <- rx // res has type map[string]interface{}
+	res := SocketCommunicate("login", "", data)
 
 	if res["status"] == "Succesfull" {
 		// Accesses nested json
@@ -40,11 +37,7 @@ func Register(responseMsg chan string, name, surname, email, password string)  {
 		password,
 	}
 
-	rx := make(chan map[string]interface{})
-
-	go SocketCommunicate("register", "", newUser, rx)
-
-	res := <- rx
+	res := SocketCommunicate("register", "", newUser)
 
 	if res["status"] == "Succesfull" {
 		responseMsg <- "User Registered"

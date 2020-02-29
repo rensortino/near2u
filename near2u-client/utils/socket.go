@@ -78,8 +78,7 @@ func socketReceive(conn net.Conn) []byte {
 }
 
 // Accepts request parameters, returns JSON as map[string]interface{} on the channel
-// TODO substitute channel with return value
-func SocketCommunicate(function, auth string, data interface{}, rx chan map[string]interface{}) {
+func SocketCommunicate(function, auth string, data interface{}) map[string]interface{} {
 
 	conn := socketConnect(ip, port)
 	defer conn.Close()
@@ -99,6 +98,5 @@ func SocketCommunicate(function, auth string, data interface{}, rx chan map[stri
 		eof := []byte(`{"status":"EOF reached"}`)
 		json.Unmarshal(eof, &jsonRes)
 	}
-	rx <- jsonRes
-	close(rx)
+	return jsonRes
 }

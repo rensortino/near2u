@@ -267,8 +267,8 @@ func getConfigureEnvWidget() *qt.QWidget {
 		go clientInstance.SelectEnv(envName.Text(), envCh, errCh)
 		select {
 		case env := <- envCh:
-			//currentEnv = env
-			changeWindow(widget, getAddSensorsWidget(env))
+			currentEnv = env
+			changeWindow(widget, getAddSensorsWidget())
 		case error := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
@@ -282,8 +282,8 @@ func getConfigureEnvWidget() *qt.QWidget {
 		go clientInstance.SelectEnv(envName.Text(), envCh, errCh)
 		select {
 		case env := <- envCh:
-			//currentEnv = env
-			changeWindow(widget, getDeleteSensorsWidget(env))
+			currentEnv = env
+			changeWindow(widget, getDeleteSensorsWidget())
 		case error := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
@@ -317,7 +317,8 @@ func getNewEnvWidget() *qt.QWidget {
 		go clientInstance.CreateEnv(envName.Text(), envCh, errCh)
 		select {
 		case newEnv := <-envCh:
-			changeWindow(widget, getAddSensorsWidget(newEnv))
+			currentEnv = newEnv
+			changeWindow(widget, getAddSensorsWidget())
 		case error := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
@@ -389,7 +390,7 @@ func getRTDataWidget(topic, uriString string) *qt.QWidget {
 
 }
 
-func getAddSensorsWidget(newEnv *client.Environment) *qt.QWidget {
+func getAddSensorsWidget() *qt.QWidget {
 
 	layout := qt.NewQVBoxLayout()
 
@@ -410,9 +411,10 @@ func getAddSensorsWidget(newEnv *client.Environment) *qt.QWidget {
 
 	addBtn := qt.NewQPushButton2("Add", nil)
 	addBtn.ConnectClicked(func(checked bool) {
+
 		sensorCh := make(chan interface{})
 		errCh := make(chan string) // Stores the error message, in case of failed request
-		go clientInstance.AddSensor(code.Text(), name.Text(), kind.Text(), newEnv, sensorCh, errCh)
+		go currentEnv.AddSensor(code.Text(), name.Text(), kind.Text(), sensorCh, errCh)
 		select {
 		case newSensor := <-sensorCh:
 			successString := fmt.Sprintf("Sensor: %s Added", newSensor.(*client.Sensor).Name)
@@ -426,22 +428,16 @@ func getAddSensorsWidget(newEnv *client.Environment) *qt.QWidget {
 	doneBtn := qt.NewQPushButton2("Done", nil)
 	doneBtn.ConnectClicked(func(checked bool) {
 
-		sensorList := make([]client.Sensor, 0)
-		// Constructs the list to send to the server
-		for _, sensor := range newEnv.SensorMap {
-			sensorList = append(sensorList, sensor.(client.Sensor))
-		}
-
 		resCh := make(chan string)
 		errCh := make(chan string)
-		go clientInstance.Done(newEnv.Name, sensorList, resCh, errCh)
+		go currentEnv.Done(resCh, errCh)
 		select {
 		case res := <-resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+			changeWindow(widget, getHomepageWidget())
 		case err := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
-		changeWindow(widget, getHomepageWidget())
 	})
 	layout.AddWidget(doneBtn, 0, 0)
 
@@ -455,7 +451,7 @@ func getAddSensorsWidget(newEnv *client.Environment) *qt.QWidget {
 
 }
 
-func getDeleteSensorsWidget(env *client.Environment) *qt.QWidget {
+func getDeleteSensorsWidget() *qt.QWidget {
 
 	layout := qt.NewQVBoxLayout()
 
@@ -469,7 +465,7 @@ func getDeleteSensorsWidget(env *client.Environment) *qt.QWidget {
 	errCh := make (chan string)
 
 	// Gets all environments from server and shows them in a combo box
-	go clientInstance.GetSensorList(env.Name, sensorsCh, errCh)
+	go currentEnv.GetSensorList(sensorsCh, errCh)
 
 	select {
 	case sensors := <- sensorsCh:
@@ -483,13 +479,11 @@ func getDeleteSensorsWidget(env *client.Environment) *qt.QWidget {
 	code.SetPlaceholderText("Sensor Code")
 	layout.AddWidget(code, 0, 0)
 
-	sensorList := make([]client.Sensor, 0)
-
 	addBtn := qt.NewQPushButton2("Add", nil)
 	addBtn.ConnectClicked(func(checked bool) {
 		sensorCh := make(chan interface{})
 		errCh := make(chan string) // Stores the error message, in case of failed request
-		go clientInstance.DeleteSensor(code.Text(), env, sensorList, sensorCh, errCh)
+		go currentEnv.DeleteSensor(code.Text(), sensorCh, errCh)
 		select {
 		case sensor := <-sensorCh:
 			successString := fmt.Sprintf("Sensor: %s Selected for deletion", sensor.(*client.Sensor).Name)
@@ -502,21 +496,16 @@ func getDeleteSensorsWidget(env *client.Environment) *qt.QWidget {
 
 	doneBtn := qt.NewQPushButton2("Done", nil)
 	doneBtn.ConnectClicked(func(checked bool) {
-		sensorList := make([]client.Sensor, 0)
-		// Constructs the list to send to the server
-		for _, sensor := range env.SensorMap {
-			sensorList = append(sensorList, sensor.(client.Sensor))
-		}
 		resCh := make(chan string)
 		errCh := make(chan string)
-		go clientInstance.Done(env.Name, sensorList, resCh, errCh)
+		go currentEnv.Done(resCh, errCh)
 		select {
 		case res := <-resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+			changeWindow(widget, getHomepageWidget())
 		case err := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
-		changeWindow(widget, getHomepageWidget())
 	})
 	layout.AddWidget(doneBtn, 0, 0)
 
