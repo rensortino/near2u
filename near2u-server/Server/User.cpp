@@ -10,25 +10,25 @@
         password = pa;
 
     }
-    std::string User::getsurname(){
+    std::string& User::getsurname(){
         return surname;
     }
-    std::string User::getPassword(){
+    std::string& User::getPassword(){
         return password;
     }
-    std::string User::getemail(){
+    std::string& User::getemail(){
         return email;
     }
-    std::string User::getName(){
+    std::string& User::getName(){
         return name;
     }
-    std::string User::getauth_token(){
+    std::string& User::getauth_token(){
         return auth_token;
     }
     std::list<Ambiente> * User::getAmbienti(){
         return &ambienti;
     }
-    Ambiente * User::getAmbiente(std::string cod_Ambiente){
+    Ambiente * User::getAmbiente(std::string& cod_Ambiente){
         std::list<Ambiente>::iterator ambienti_iterator;
 
         for(ambienti_iterator=ambienti.begin(); ambienti_iterator != ambienti.end(); ambienti_iterator ++){
@@ -44,6 +44,29 @@
     }
     void User::setAdmin(bool role){
         admin = role;
+    }
+
+    void User::addAmbiente(std::string& nome, std::string& codice ){
+        Ambiente ambiente(nome,codice);
+        ambienti.push_back(ambiente);
+    }
+    void User::addSensore(std::string& cod_ambiente,int code, std::string& nome, std::string& tipo ){
+        
+        Ambiente * ambiente = User::getAmbiente(cod_ambiente);
+        ambiente->addSensore(code,nome,tipo);
+    }
+    std::list<Sensore> * User::getSensori(std::string& cod_ambiente){
+        Ambiente * ambiente;
+        ambiente = User::getAmbiente(cod_ambiente);
+        if(ambiente != nullptr){
+            return ambiente->getSensori();
+        }
+        return nullptr; 
+    }
+    void User::deleteSensore(std::string& cod_ambiente, int cod_sensore){
+        Ambiente * ambiente;
+        ambiente = User::getAmbiente(cod_ambiente);
+        ambiente ->deleteSensore(cod_sensore);
     }
     
 

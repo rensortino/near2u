@@ -4,7 +4,8 @@
 
 namespace MYSQL{
 
-Json::Value insert( std::string query);
+int Query( std::string query);
+bool Queries (std::list<std::string> queries);
 sql::ResultSet* Select_Query(std::string query);
 
 }

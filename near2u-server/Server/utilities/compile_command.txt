@@ -1,1 +1,3 @@
 g++ -g -o Main   -I/usr/local/include -I/usr/local/include/cppconn   -Wl,-Bdynamic main.cpp -lmysqlcppconn -ljsoncpp -lcrypto -lssl -pthread -std=c++17
+
+sudo kill $(lsof -t -i:8082) //to kill mqttbroker listening on 8082

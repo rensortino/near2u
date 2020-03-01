@@ -5,7 +5,6 @@
 #include <iostream>
 #include <assert.h>
 #include <jsoncpp/json/json.h>
-
 #include "Ambiente.hpp"
 #include "User.hpp"
 #include <shared_mutex>
@@ -24,12 +23,19 @@ private:
 
 
 public:
+	std::list<User> * getUsers();
+	std::shared_mutex * getUser_mutex();
 	static Controller* getIstance();
-	Json::Value Seleziona_Ambiente(Json::Value data);
+	Json::Value Topic_Ambiente(Json::Value data);
 	Json::Value Register(Json::Value data);
 	Json::Value Login(Json::Value data);
 	Json::Value Configura_ambiente(Json::Value data);
 	Json::Value Inserisci_Sensori(Json::Value data);
+	Json::Value Visualizza_Ambienti(Json::Value data);
+	Json::Value Visualizza_Sensori(Json::Value data);
+	Json::Value Elimina_sensori(Json::Value data);
+
+
 	
 
 };

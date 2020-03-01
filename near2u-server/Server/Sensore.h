@@ -11,10 +11,10 @@
 class Sensore
 {
 public:
-	Sensore(int cod, std::string nome, std::string tipo);
+	Sensore(int cod, std::string& nome, std::string& tipo);
 	int getCodSensore();
-	std::string getName();
-	std::string getType();
+	std::string& getName();
+	std::string& getType();
 private:
 	int codSensore;
 	std::string type;
