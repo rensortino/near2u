@@ -15,7 +15,7 @@
 #define TIMEOUT     10000L
 
 
-// questa funzione serve a simulare la pubblicazione sul broker mqtt da parte dei sensori dei vari ambienti
+// questa funzione serve a simulare la pubblicazione sul broker mqtt da parte dei dispositivi dei vari ambienti
 void sensors_pubblish(){
 
     MQTTClient client;
@@ -48,18 +48,20 @@ void sensors_pubblish(){
             std::list<Ambiente> * ambienti = (*users_iterator).getAmbienti(); 
             for(ambienti_itarator = ambienti->begin(); ambienti_itarator != ambienti->end(); ambienti_itarator ++){
                 std::string topic = (*ambienti_itarator).getcodAmbiente();
-                std::list<Sensore>::iterator sensori_itarator;
-                std::list<Sensore> * sensori = (*ambienti_itarator).getSensori(); 
-                for(sensori_itarator = sensori->begin();sensori_itarator != sensori->end(); sensori_itarator ++){
-                    std::string message = "{\"code\":" + std::to_string(sensori_itarator->getCodSensore()) + ",\"name\":\""+ sensori_itarator->getName() + "\",\"type\":\""+sensori_itarator->getType() +" \",\"measurement\":"+std::to_string((float)rand()/(float)(RAND_MAX/15)) +" }";
-                    std::cout << message << std::endl;
-                    pubmsg.payload = &message;
-                    pubmsg.payloadlen = message.size();
-                    pubmsg.qos = QOS;
-                    pubmsg.retained = 0;
-                    MQTTClient_publishMessage(client, topic.c_str(), &pubmsg, &token);
-                    rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
-                    printf("Message with delivery token %d delivered\n", token);
+                std::list<Dispositivo>::iterator dispositivi_iterator;
+                std::list<Dispositivo> * dispositivi = (*ambienti_itarator).getDispositivi(); 
+                for(dispositivi_iterator = dispositivi->begin();dispositivi_iterator != dispositivi->end(); dispositivi_iterator ++){
+                    if(typeid(dispositivi_iterator) == typeid(Sensore)){
+                        std::string message = "{\"code\":" + std::to_string(dispositivi_iterator->getCodice()) + ",\"name\":\""+ dispositivi_iterator->getNome() + "\",\"type\":\""+dispositivi_iterator->getTipo() +" \",\"measurement\":"+std::to_string((float)rand()/(float)(RAND_MAX/15)) +" }";
+                        std::cout << message << std::endl;
+                        pubmsg.payload = &message;
+                        pubmsg.payloadlen = message.size();
+                        pubmsg.qos = QOS;
+                        pubmsg.retained = 0;
+                        MQTTClient_publishMessage(client, topic.c_str(), &pubmsg, &token);
+                        rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
+                        printf("Message with delivery token %d delivered\n", token);
+                    }
                 }
             }
         }

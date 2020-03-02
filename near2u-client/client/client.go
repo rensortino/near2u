@@ -30,7 +30,7 @@ func GetClientInstance() *Client {
 }
 
 // Gets an array of Environment IDs from the server, to be displayed on the GUI for selection
-func (c *Client) GetEnvList(envListCh chan []string, errCh chan string) {
+func (c *Client) GetEnvList(envListCh chan []interface{}, errCh chan string) {
 
 	res := utils.SocketCommunicate("visualizza_ambienti", c.LoggedUser, nil)
 
@@ -39,7 +39,7 @@ func (c *Client) GetEnvList(envListCh chan []string, errCh chan string) {
 		return
 	}
 
-	envListCh <- res["data"].(map[string]interface{})["environments"].([]string)
+	envListCh <- res["data"].(map[string]interface{})["environments"].([]interface{})
 	close(envListCh)
 }
 

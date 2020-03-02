@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"time"
+	
 
 	"./client"
 	"./utils"
@@ -196,10 +197,10 @@ func getSelectEnvForMQTTWidget() *qt.QWidget {
 	widget := qt.NewQWidget(nil, 0)
 	widget.SetLayout(layout)
 
-	envList := qt.NewQComboBox(nil)
-	envList.SetEditable(false)
+	envListCB := qt.NewQComboBox(nil)
+	envListCB.SetEditable(false)
 
-	envListCh := make(chan []string)
+	envListCh := make(chan []interface{})
 	errCh := make(chan string)
 
 	// Gets all environments from server and shows them in a combo box
@@ -207,18 +208,22 @@ func getSelectEnvForMQTTWidget() *qt.QWidget {
 
 	select {
 	case envs := <-envListCh:
-		envList.AddItems(envs)
+		envList := make([]string, 0)
+		for _, env := range envs {
+			envList = append(envList, env.(string))
+		}
+		envListCB.AddItems(envList)
 	case error := <-errCh:
 		qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 	}
-	layout.AddWidget(envList, 0, 0)
+	layout.AddWidget(envListCB, 0, 0)
 
 	selEnvBtn := qt.NewQPushButton2("Select Environment", nil)
 	selEnvBtn.ConnectClicked(func(checked bool) {
 		topicCh := make(chan string) // Stores the topic returned from the server
 		uriCh := make(chan string)
 		errCh := make(chan string) // Stores the error message, in case of failed request
-		go clientInstance.GetTopicAndUri(envList.CurrentText(), topicCh, uriCh, errCh)
+		go clientInstance.GetTopicAndUri(envListCB.CurrentText(), topicCh, uriCh, errCh)
 		select {
 		case topic := <-topicCh:
 			uri := <-uriCh
@@ -246,34 +251,45 @@ func getConfigureEnvWidget() *qt.QWidget {
 	widget := qt.NewQWidget(nil, 0)
 	widget.SetLayout(layout)
 
-	envList := qt.NewQComboBox(nil)
-	envList.SetEditable(false)
+	envListCB := qt.NewQComboBox(nil)
+	envListCB.SetEditable(false)
 
-	envListCh := make(chan []string)
+	envListCh := make(chan []interface{})
 	errCh := make(chan string)
 
 	// Gets all environments from server and shows them in a combo box
 	go clientInstance.GetEnvList(envListCh, errCh)
 
 	select {
-	case envs := <-envListCh:
-		envList.AddItems(envs)
+	case envs := <- envListCh:
+		envList := make([]string, 0)
+		for _, env := range envs {
+			envList = append(envList, env.(string))
+		}
+		envListCB.AddItems(envList)
+		
 	case error := <-errCh:
 		qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 	}
-	layout.AddWidget(envList, 0, 0)
+	layout.AddWidget(envListCB, 0, 0)
 
 	envName := qt.NewQLineEdit(nil)
 	layout.AddWidget(envName, 0, 0)
 
-	addSensorsBtn := qt.NewQPushButton2("Add Sensors", nil)
+	addSensorsBtn := qt.NewQPushButton2("Add Devices", nil)
 	addSensorsBtn.ConnectClicked(func(checked bool) {
-		envCh := make(chan *client.Environment)
+		currentEnv = &client.Environment{envName.Text(), make(map[string]interface{}), 0}
+		devicesListCh := make(chan []interface{})
 		errCh := make(chan string) // Stores the error message, in case of failed request
-		go clientInstance.SelectEnv(envName.Text(), envCh, errCh)
+		fmt.Println(currentEnv)
+		go currentEnv.GetDevicesList(devicesListCh, errCh)
 		select {
-		case env := <-envCh:
-			currentEnv = env
+		case devList := <-devicesListCh:
+			fmt.Println(devList)
+			for _, device := range devList {
+				code := device.(client.Device).Code
+				currentEnv.DeviceMap[string(code)] = device
+			}
 			changeWindow(widget, getAddSensorsWidget())
 		case error := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
@@ -423,8 +439,8 @@ func getAddSensorsWidget() *qt.QWidget {
 		errCh := make(chan string) // Stores the error message, in case of failed request
 		go currentEnv.AddDevice(code.Text(), name.Text(), kind.Text(), commands, deviceCh, errCh)
 		select {
-		case newSensor := <-deviceCh:
-			successString := fmt.Sprintf("Sensor: %s Added", newSensor.(*client.Sensor).Name)
+		case newDevice := <-deviceCh:
+			successString := fmt.Sprintf("Sensor: %s Added", newDevice.(*client.Device).Name)
 			qt.QMessageBox_Information(nil, "OK", successString, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		case error := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)

@@ -34,6 +34,8 @@ public:
 	Json::Value Visualizza_Ambienti(Json::Value data);
 	Json::Value Visualizza_Sensori(Json::Value data);
 	Json::Value Elimina_sensori(Json::Value data);
+	Json::Value Inserisci_Dispositivi(Json::Value data);
+	Json::Value Visualizza_Dispositivi(Json::Value data);
 
 
 	

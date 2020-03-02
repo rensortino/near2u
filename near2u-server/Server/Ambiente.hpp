@@ -6,6 +6,7 @@
 #include <assert.h>
 
 #include "Sensore.h"
+#include "Attuatore.hpp"
 
 class Ambiente
 {
@@ -13,10 +14,14 @@ class Ambiente
 	Ambiente( std::string& name, std::string& cod);
 	std::string& getNome();
 	std::string& getcodAmbiente();
-	std::list<Sensore> * getSensori();
+	std::list<Dispositivo> * getDispositivi();
 	void addSensore(int code, std::string& nome, std::string& tipo);
 	Sensore * getSensore(int cod_sensore);
-	void deleteSensore(int cod_sensore);
+	Attuatore * getAttuatore(int cod_attuatore);
+	void deleteDispositivo(int cod_dispositivo);
+	void addAttuatore(int code, std::string& nome, std::string& tipo);
+	void addComando(int code, std::string& comando);
+	void addDispositivo(int code, std::string& nome, std::string& tipo, std::list<std::string> * commands);
 
 private:
 
@@ -24,7 +29,7 @@ private:
 
 	std::string codAmbiente;
 
-	std::list<Sensore> sensori;
+	std::list<Dispositivo> dispositivi;
 
 };
 

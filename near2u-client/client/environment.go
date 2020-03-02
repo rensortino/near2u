@@ -17,7 +17,7 @@ var deviceList []interface{} // used list of interfaces to implement polymorphis
 func (e * Environment) GetDevicesList(deviceListCh chan []interface{}, errCh chan string) {
 
 	data := struct {
-		EnvName string
+		EnvName string `json:"envname"`
 	}{
 		e.Name,
 	}
@@ -26,6 +26,11 @@ func (e * Environment) GetDevicesList(deviceListCh chan []interface{}, errCh cha
 
 	if res["status"] == "Failed" {
 		errCh <- res["error"].(string)
+		return
+	}
+
+	if res["data"].(map[string]interface{})["sensors"] == nil {
+		deviceListCh <- make([]interface{}, 0)
 		return
 	}
 
@@ -152,7 +157,7 @@ func (e * Environment) Done(operation string, resCh, errCh chan string) {
 
 func (e * Environment) SendCommand(code, command string, resCh, errCh chan string) {
 
-	res := e.DeviceMap[code].(Actuator).SendCommand(e.Name, command)
+	res := e.DeviceMap[code].(* Actuator).SendCommand(e.Name, command)
 
 	if res != "error" {
 		resCh <- res
