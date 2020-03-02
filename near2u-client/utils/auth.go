@@ -3,9 +3,9 @@ package utils
 func Login(responseMsg, token chan string, email, password string) {
 
 	data := struct {
-		Email string
+		Email    string
 		Password string
-	} {
+	}{
 		email,
 		password,
 	}
@@ -16,21 +16,21 @@ func Login(responseMsg, token chan string, email, password string) {
 		// Accesses nested json
 		token <- res["data"].(map[string]interface{})["auth"].(string)
 		responseMsg <- "User Authenticated"
-	}else {
+	} else {
 		token <- "NULL"
 		responseMsg <- res["error"].(string)
 	}
 
 }
 
-func Register(responseMsg chan string, name, surname, email, password string)  {
+func Register(responseMsg chan string, name, surname, email, password string) {
 
 	newUser := struct {
-		Name string `json:"name"`
-		Surname string `json:"surname"`
-		Email string `json:"email"`
+		Name     string `json:"name"`
+		Surname  string `json:"surname"`
+		Email    string `json:"email"`
 		Password string `json:"password"`
-	} {
+	}{
 		name,
 		surname,
 		email,
@@ -41,7 +41,7 @@ func Register(responseMsg chan string, name, surname, email, password string)  {
 
 	if res["status"] == "Succesfull" {
 		responseMsg <- "User Registered"
-	}else {
+	} else {
 		responseMsg <- res["error"].(string)
 	}
 }

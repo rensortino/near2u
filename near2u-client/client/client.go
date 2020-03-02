@@ -13,12 +13,6 @@ type Client struct {
 	MQTTClient mqtt.Client
 }
 
-type Sensor struct {
-	Code int    `json:"code"`
-	Name string `json:name`
-	Kind string `json:kind`
-}
-
 var clientInstance *Client
 
 // Implements singleton pattern
@@ -108,7 +102,7 @@ func (c *Client) GetTopicAndUri(envName string, topicCh, uriCh, errCh chan strin
 	close(uriCh)
 }
 
-func (c * Client) SelectEnv(envName string, envCh chan * Environment, errCh chan string) {
+func (c *Client) SelectEnv(envName string, envCh chan *Environment, errCh chan string) {
 
 	data := struct {
 		Name string `json:"name"`
@@ -125,7 +119,7 @@ func (c * Client) SelectEnv(envName string, envCh chan * Environment, errCh chan
 		return
 	}
 
-	envCh <- res["data"].(map[string]interface{})["environment"].(* Environment)
+	envCh <- res["data"].(map[string]interface{})["environment"].(*Environment)
 	close(envCh)
 }
 
@@ -154,5 +148,3 @@ func (c *Client) CreateEnv(envName string, envCh chan *Environment, errCh chan s
 		return
 	}
 }
-
-

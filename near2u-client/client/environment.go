@@ -6,93 +6,105 @@ import (
 )
 
 type Environment struct {
-	Name      string                 `json:"name"`
-	SensorMap map[string]interface{} `json:"sensors"`
-	LastModified int `json:"lastmodified"`
+	Name         string                 `json:"name"`
+	DeviceMap    map[string]interface{} `json:"devices"`
+	LastModified int                    `json:"lastmodified"`
 }
 
-type Device struct {
-	Code int    `json:"code"`
-	Name string `json:"name"`
-	Kind string `json:"kind"`
-}
+// Temporary list that stores the devices to add / delete
+var deviceList []interface{} // used list of interfaces to implement polymorphism
 
-type Actuator struct {
-	Device `json:"device"`
-	Commands []string `json:"commands"`
-}
-
-// Temporary list that stores the sensors to add / delete
-var sensorList [] Sensor
-
-func (e * Environment) GetSensorList(sensorListCh chan []string, errCh chan string) {
+func (e * Environment) GetDevicesList(deviceListCh chan []interface{}, errCh chan string) {
 
 	data := struct {
 		EnvName string
-	} {
+	}{
 		e.Name,
 	}
 
-	res := utils.SocketCommunicate("visualizza_sensori", clientInstance.LoggedUser, data)
+	res := utils.SocketCommunicate("visualizza_dispositivi", clientInstance.LoggedUser, data)
 
 	if res["status"] == "Failed" {
 		errCh <- res["error"].(string)
 		return
 	}
 
-	sensors := res["data"].(map[string]interface{})["sensors"].([]Sensor)
+	devices := res["data"].(map[string]interface{})["sensors"].([]interface{})
 
-	for _, sensor := range sensors {
-		e.SensorMap[strconv.Itoa(sensor.Code)] = sensor
+	for _, device := range devices {
+		e.DeviceMap[strconv.Itoa(device.(Device).Code)] = device
 	}
 
-	// TODO Make the server return a list of sensors
-	// Returns a list of sensor codes
-	sensorListCh <- res["data"].(map[string]interface{})["sensors"].([]string)
+	// Returns a list of devices
+	deviceListCh <- devices
 }
 
-func (e * Environment) AddSensor(code, name, kind string,
+func (e * Environment) AddDevice(code, name, kind string, commands []string,
 	sensorCh chan interface{}, errCh chan string) {
 
-	if !(len(e.SensorMap) == 0) {
-		_, found := e.SensorMap[code]
-		if found {
-			errCh <- "Code already in use, please choose another one"
-			close(errCh)
-			return
-		}
-	}
 	intCode, err := strconv.Atoi(code)
 	if err != nil {
 		errCh <- "Sensor Code must be integer"
 		close(errCh)
 		return
 	}
-	newSensor := Sensor{
-		intCode,
-		name,
-		kind,
+
+	newDevice := NewDevice(intCode, name, kind, commands)
+
+	if newDevice == nil {
+		errCh <- "Error creating new device"
+		close(errCh)
+		return
 	}
-	sensorList = append(sensorList, newSensor)
-	sensorCh <- &newSensor
+
+	var mapCode int
+
+	if !(len(e.DeviceMap) == 0) {
+		switch d := newDevice.(type){
+		case Sensor:
+			mapCode = d.Code
+		case Actuator:
+			mapCode = d.Code
+		}
+		_, found := e.DeviceMap[string(mapCode)]
+		if found {
+			errCh <- "Code already in use, please choose another one"
+			close(errCh)
+			return
+		}
+	}
+
+	switch d := newDevice.(type){
+	case Sensor:
+		d.Append(deviceList)
+	case Actuator:
+		d.Append(deviceList)
+	}
+
+	sensorCh <- &newDevice
 	close(sensorCh)
 }
 
 // Adds the selected sensor to a list in order to collect all sensors to delete
 // and to send them in batch to the server
-func (e * Environment) DeleteSensor(code string, sensorCh chan interface{}, errCh chan string) {
+func (e * Environment) DeleteDevice(code string, deviceCh chan interface{}, errCh chan string) {
 
-	if len(e.SensorMap) == 0 {
+	if len(e.DeviceMap) == 0 {
 		errCh <- "Empty Environment, no sensors to delete"
 		close(errCh)
 		return
 	}
-	sensor, found := e.SensorMap[code]
+	device, found := e.DeviceMap[code]
 	if found {
 		// Sensor list is passed by reference because is a slice
-		sensorList = append(sensorList, sensor.(Sensor))
-		sensorCh <- sensor.(Sensor)
-		close(sensorCh)
+		switch d := device.(type) {
+		case Sensor:
+			d.Append(deviceList)
+		case Actuator:
+			d.Append(deviceList)
+		}
+		deviceCh <- device
+		close(deviceCh)
 		return
 	} else {
 		errCh <- "Sensor not found"
@@ -102,22 +114,30 @@ func (e * Environment) DeleteSensor(code string, sensorCh chan interface{}, errC
 
 }
 
-func (e * Environment) Done(resCh, errCh chan string) {
+func (e * Environment) Done(operation string, resCh, errCh chan string) {
 
-	if len(sensorList) == 0 {
-		errCh <- "No sensor selected"
+	if len(deviceList) == 0 {
+		errCh <- "No device selected"
 		return
 	}
 
 	data := struct {
-		Sensors []Sensor `json:"sensors"`
-		EnvName string   `json:"envName"`
+		Devices []interface{} `json:"devices"`
+		EnvName string   `json:"envname"`
 	}{
-		sensorList,
+		deviceList,
 		e.Name,
 	}
 
-	res := utils.SocketCommunicate("inserisci_sensori", clientInstance.LoggedUser, data)
+	var res map[string]interface{}
+
+	switch operation {
+	case "add":
+		res = utils.SocketCommunicate("inserisci_dispositivi", clientInstance.LoggedUser, data)
+	case "delete":
+		res = utils.SocketCommunicate("elimina_dispositivi", clientInstance.LoggedUser, data)
+	}
+
 
 	if res["status"] == "Succesfull" {
 		resCh <- res["status"].(string)
@@ -127,5 +147,17 @@ func (e * Environment) Done(resCh, errCh chan string) {
 		errCh <- res["error"].(string)
 		close(errCh)
 		return
+	}
+}
+
+func (e * Environment) SendCommand(code, command string, resCh, errCh chan string) {
+
+	res := e.DeviceMap[code].(Actuator).SendCommand(e.Name, command)
+
+	if res != "error" {
+		resCh <- res
+		return
+	} else {
+		errCh <- "Error sending commands"
 	}
 }
