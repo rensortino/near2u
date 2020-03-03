@@ -33,7 +33,7 @@ func NewDevice(code int, name, kind string, commands []string) interface{} {
 	if commands == nil {
 		newSensor := Sensor{
 			newDevice,
-			nil,
+			0.0,
 		}
 		return newSensor
 	}

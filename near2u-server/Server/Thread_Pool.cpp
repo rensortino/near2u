@@ -7,9 +7,10 @@
                         Login, 
                         Topic_Ambiente,
                         Configura_Ambiente,
-                        Inserisci_Sensori,
+                        Inseresci_Dispositivi,
                         Visualizza_Ambienti,
                         Visualizza_Sensori,
+                        Visualizza_Dispositivi,
                         Elimina_Sensori
                         };
     static std::map<std::string, StringValue> s_mapStringValues;
@@ -87,17 +88,20 @@
             case Configura_Ambiente:
                 response = controller->Configura_ambiente(requestjson).toStyledString();
                 break;
-            case Inserisci_Sensori:
-                response = controller->Inserisci_Sensori(requestjson).toStyledString();
+            case Inseresci_Dispositivi:
+                response = controller->Inserisci_Dispositivi(requestjson).toStyledString();
                 break;
             case Visualizza_Ambienti:
                 response = controller->Visualizza_Ambienti(requestjson).toStyledString();
                 break;
             case Visualizza_Sensori:
-                response = controller->Visualizza_Sensori(requestjson).toStyledString();
+               // response = controller->Visualizza_Sensori(requestjson).toStyledString();
                 break;
                 case Elimina_Sensori:
-                response = controller->Elimina_sensori(requestjson).toStyledString();
+                //response = controller->Elimina_sensori(requestjson).toStyledString();
+                break;
+                case Visualizza_Dispositivi:
+                response = controller->Visualizza_Dispositivi(requestjson).toStyledString();
                 break;
             default:
                 response = "{\"status\" : \"Service not avaible\"}"; 
@@ -115,10 +119,11 @@
     s_mapStringValues["login"] = Login;
     s_mapStringValues["topic_ambiente"] = Topic_Ambiente;
     s_mapStringValues["configura_ambiente"] = Configura_Ambiente;
-    s_mapStringValues["inserisci_sensori"] = Inserisci_Sensori;
+    s_mapStringValues["inserisci_dispositivi"] = Inseresci_Dispositivi;
     s_mapStringValues["visualizza_ambienti"] = Visualizza_Ambienti;
     s_mapStringValues["visualizza_sensori"] = Visualizza_Sensori;
     s_mapStringValues["elimina_sensori"] = Elimina_Sensori;
+    s_mapStringValues["visualizza_dispositivi"] = Visualizza_Dispositivi;
     
     std::cout << "s_mapStringValues contains " 
         << s_mapStringValues.size() 

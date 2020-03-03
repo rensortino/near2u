@@ -29,8 +29,17 @@ func GetClientInstance() *Client {
 	return clientInstance
 }
 
+// Used when configuring an environment, to indicate which one to work with
+func SetCurrentEnv(currentEnv * Environment, name string) {
+	if currentEnv.Name != name {
+		currentEnv.Name = name
+		currentEnv.DeviceMap = make(map[string]interface{}) // Initialize the map to populate it with the devices
+		currentEnv.LastModified = 0
+	}
+}
+
 // Gets an array of Environment IDs from the server, to be displayed on the GUI for selection
-func (c *Client) GetEnvList(envListCh chan []string, errCh chan string) {
+func (c *Client) GetEnvList(envNameCh chan string, errCh chan string) {
 
 	res := utils.SocketCommunicate("visualizza_ambienti", c.LoggedUser, nil)
 
@@ -39,8 +48,11 @@ func (c *Client) GetEnvList(envListCh chan []string, errCh chan string) {
 		return
 	}
 
-	envListCh <- res["data"].(map[string]interface{})["environments"].([]string)
-	close(envListCh)
+	envNameCh <- "start" // Used to enter the correct case in the select
+	for _ ,v := range res["data"].(map[string]interface{})["environments"].([]interface{}) {
+		envNameCh <- v.(string)
+	}
+	close(envNameCh)
 }
 
 func (c *Client) GetSensorData(topic string, rtCh chan map[string]interface{}) {
@@ -101,7 +113,7 @@ func (c *Client) GetTopicAndUri(envName string, topicCh, uriCh, errCh chan strin
 	close(topicCh)
 	close(uriCh)
 }
-
+/*
 func (c *Client) SelectEnv(envName string, envCh chan *Environment, errCh chan string) {
 
 	data := struct {
@@ -122,8 +134,8 @@ func (c *Client) SelectEnv(envName string, envCh chan *Environment, errCh chan s
 	envCh <- res["data"].(map[string]interface{})["environment"].(*Environment)
 	close(envCh)
 }
-
-func (c *Client) CreateEnv(envName string, envCh chan *Environment, errCh chan string) {
+*/
+func (c *Client) CreateEnv(envName string, currentEnv * Environment, resCh, errCh chan string) {
 
 	data := struct {
 		Name string `json:"name"`
@@ -131,16 +143,11 @@ func (c *Client) CreateEnv(envName string, envCh chan *Environment, errCh chan s
 		envName,
 	}
 
-	res := utils.SocketCommunicate("configura_ambiente", c.LoggedUser, data)
+	res := utils.SocketCommunicate("crea_ambiente", c.LoggedUser, data)
 
 	if res["status"] == "Succesfull" {
-		newEnv := &Environment{
-			envName,
-			make(map[string]interface{}),
-			0,
-		}
-		envCh <- newEnv
-		close(envCh)
+		SetCurrentEnv(currentEnv, envName)
+		resCh <- res["status"]
 		return
 	} else {
 		errCh <- res["error"].(string)

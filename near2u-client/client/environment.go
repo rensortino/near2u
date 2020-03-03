@@ -2,6 +2,7 @@ package client
 
 import (
 	"../utils"
+	"fmt"
 	"strconv"
 )
 
@@ -14,10 +15,10 @@ type Environment struct {
 // Temporary list that stores the devices to add / delete
 var deviceList []interface{} // used list of interfaces to implement polymorphism
 
-func (e * Environment) GetDevicesList(deviceListCh chan []interface{}, errCh chan string) {
+func (e * Environment) GetDevicesList(resCh chan string, errCh chan string) {
 
 	data := struct {
-		EnvName string
+		EnvName string `json:"envname"`
 	}{
 		e.Name,
 	}
@@ -29,14 +30,28 @@ func (e * Environment) GetDevicesList(deviceListCh chan []interface{}, errCh cha
 		return
 	}
 
-	devices := res["data"].(map[string]interface{})["sensors"].([]interface{})
-
-	for _, device := range devices {
-		e.DeviceMap[strconv.Itoa(device.(Device).Code)] = device
+	if len(res["data"].(map[string]interface{})["devices"].([]interface{})) == 0 {
+		resCh <- "Environment with no Devices"
+		return
 	}
 
-	// Returns a list of devices
-	deviceListCh <- devices
+	devices := res["data"].(map[string]interface{})["devices"].([]interface{})
+
+	for _, device := range devices {
+		fmt.Println(devices)
+		var code string
+		switch d := device.(type) {
+		case Sensor:
+			code = string(d.Code)
+			e.DeviceMap[code] = d
+		case Actuator:
+			code = string(d.Code)
+			e.DeviceMap[code] = d
+		}
+	}
+
+	resCh <- "Success"
+	close(resCh)
 }
 
 func (e * Environment) AddDevice(code, name, kind string, commands []string,
@@ -164,14 +179,12 @@ func (e * Environment) SendCommand(code, command string, resCh, errCh chan strin
 		errCh <- "Actuator has no commands"
 	}
 
-	res := e.DeviceMap[code].(Actuator).SendCommand(e.Name, command)
+	res := act.(Actuator).SendCommand(e.Name, command)
 
 	if res != "error" {
 		resCh <- res
-		close(resCh)
 		return
 	} else {
 		errCh <- "Error sending commands"
-		close(errCh)
 	}
 }
