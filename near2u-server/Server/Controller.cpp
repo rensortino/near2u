@@ -260,6 +260,7 @@
 					transaction.push_back(query);
 					commands.push_back(command);
 				}
+				
 				Current_User->addDispositivo(cod_ambiente,code,name,type,&commands);
 			}
 			else{
