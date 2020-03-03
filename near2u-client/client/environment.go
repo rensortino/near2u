@@ -152,12 +152,26 @@ func (e * Environment) Done(operation string, resCh, errCh chan string) {
 
 func (e * Environment) SendCommand(code, command string, resCh, errCh chan string) {
 
+	act, found := e.DeviceMap[code]
+
+	if !found {
+		errCh <- "Actuator not found"
+		close(errCh)
+		return
+	}
+
+	if act.(Actuator).Commands == nil {
+		errCh <- "Actuator has no commands"
+	}
+
 	res := e.DeviceMap[code].(Actuator).SendCommand(e.Name, command)
 
 	if res != "error" {
 		resCh <- res
+		close(resCh)
 		return
 	} else {
 		errCh <- "Error sending commands"
+		close(errCh)
 	}
 }

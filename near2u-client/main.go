@@ -372,8 +372,8 @@ func getRTDataWidget(topic, uriString string) *qt.QWidget {
 			select {
 			case receivedData := <-rtCh:
 				for id, sensor := range receivedData {
-					name := sensor.(map[string]interface{})["Name"].(string)
-					measurement := sensor.(map[string]interface{})["Measurement"].(float64)
+					name := sensor.(map[string]interface{})["name"].(string)
+					measurement := sensor.(map[string]interface{})["measurement"].(float64)
 					dataList.AddItem(fmt.Sprintf("%s\t%s\t%f\n", id, name, measurement))
 				}
 			case <-quit:
