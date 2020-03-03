@@ -6,12 +6,11 @@
                         Register, 
                         Login, 
                         Topic_Ambiente,
-                        Configura_Ambiente,
+                        Crea_Ambiente,
                         Inseresci_Dispositivi,
                         Visualizza_Ambienti,
-                        Visualizza_Sensori,
                         Visualizza_Dispositivi,
-                        Elimina_Sensori
+                        Elimina_Dispositivi
                         };
     static std::map<std::string, StringValue> s_mapStringValues;
 
@@ -85,8 +84,8 @@
                 response =  controller->Topic_Ambiente(requestjson).toStyledString(); 
                 break;
             
-            case Configura_Ambiente:
-                response = controller->Configura_ambiente(requestjson).toStyledString();
+            case Crea_Ambiente:
+                response = controller->Crea_Ambiente(requestjson).toStyledString();
                 break;
             case Inseresci_Dispositivi:
                 response = controller->Inserisci_Dispositivi(requestjson).toStyledString();
@@ -94,14 +93,11 @@
             case Visualizza_Ambienti:
                 response = controller->Visualizza_Ambienti(requestjson).toStyledString();
                 break;
-            case Visualizza_Sensori:
-               // response = controller->Visualizza_Sensori(requestjson).toStyledString();
-                break;
-                case Elimina_Sensori:
-                //response = controller->Elimina_sensori(requestjson).toStyledString();
-                break;
-                case Visualizza_Dispositivi:
+            case Visualizza_Dispositivi:
                 response = controller->Visualizza_Dispositivi(requestjson).toStyledString();
+                break;
+            case Elimina_Dispositivi:
+                response = controller->Elimina_Dispositivi(requestjson).toStyledString();
                 break;
             default:
                 response = "{\"status\" : \"Service not avaible\"}"; 
@@ -118,11 +114,10 @@
     s_mapStringValues["register"] = Register;
     s_mapStringValues["login"] = Login;
     s_mapStringValues["topic_ambiente"] = Topic_Ambiente;
-    s_mapStringValues["configura_ambiente"] = Configura_Ambiente;
+    s_mapStringValues["crea_ambiente"] = Crea_Ambiente;
     s_mapStringValues["inserisci_dispositivi"] = Inseresci_Dispositivi;
     s_mapStringValues["visualizza_ambienti"] = Visualizza_Ambienti;
-    s_mapStringValues["visualizza_sensori"] = Visualizza_Sensori;
-    s_mapStringValues["elimina_sensori"] = Elimina_Sensori;
+    s_mapStringValues["elimina_dispositivi"] = Elimina_Dispositivi;
     s_mapStringValues["visualizza_dispositivi"] = Visualizza_Dispositivi;
     
     std::cout << "s_mapStringValues contains " 

@@ -87,37 +87,32 @@
 					sql::ResultSet *ambienti_db = MYSQL::Select_Query(query);
 					if(ambienti_db ->rowsCount() > 0){
 						while(ambienti_db->next()){
-							std::string name = ambienti_db->getString("name");
+							std::string name_ambiente = ambienti_db->getString("name");
 							std::string cod_ambiente = ambienti_db->getString("cod_ambiente");
-							Ambiente ambiente(name ,cod_ambiente);
-							query = "select Dispositivo.name, Dispositivo.type, Dispositivo.code from ((Dispositivo join Sensore on Sensore.code = Dispositivo.code) join Dispositivo_Ambiente on Dispositivo.code = Dispositivo_Ambiente.code) where Dispositivo_Ambiente.cod_ambiente = '"+ ambiente.getcodAmbiente() +"';";
+							user.addAmbiente(name_ambiente,cod_ambiente);
+							query = "select Dispositivo.name, Dispositivo.type, Dispositivo.code from ((Dispositivo join Sensore on Sensore.code = Dispositivo.code) join Dispositivo_Ambiente on Dispositivo.code = Dispositivo_Ambiente.code) where Dispositivo_Ambiente.cod_ambiente = '"+ cod_ambiente +"';";
 							sql::ResultSet *sensori_db = MYSQL::Select_Query(query);
 							while(sensori_db->next()){
-								std::string nome=sensori_db->getString("name");
-								std::string tipo= sensori_db ->getString("type");
-								int code= sensori_db->getInt("code");
-								Sensore sensore(code, nome, tipo);
-								ambiente.getDispositivi()->push_back(sensore);
+								std::string nome_sensore=sensori_db->getString("name");
+								std::string tipo_sensore= sensori_db ->getString("type");
+								int code_sensore= sensori_db->getInt("code");
+								user.addDispositivo(cod_ambiente,code_sensore,nome_sensore,tipo_sensore,nullptr);
 							}
-							query = "select Dispositivo.name, Dispositivo.type, Dispositivo.code from ((Dispositivo join Attuatore on Attuatore.code = Dispositivo.code) join Dispositivo_Ambiente on Dispositivo.code = Dispositivo_Ambiente.code) where Dispositivo_Ambiente.cod_ambiente = '"+ ambiente.getcodAmbiente() +"';";
+							query = "select Dispositivo.name, Dispositivo.type, Dispositivo.code from ((Dispositivo join Attuatore on Attuatore.code = Dispositivo.code) join Dispositivo_Ambiente on Dispositivo.code = Dispositivo_Ambiente.code) where Dispositivo_Ambiente.cod_ambiente = '"+ cod_ambiente +"';";
 							sql::ResultSet *attuatori_db = MYSQL::Select_Query(query);
 							while(attuatori_db->next()){
 									std::list<std::string> comandi;
-									std::string nome=attuatori_db->getString("name");
-									std::string tipo= attuatori_db ->getString("type");
-									int code= attuatori_db->getInt("code");
-									std::string query = " select comando from Comandi where cod_attuatore = "+ std::to_string(code) +";";
+									std::string nome_attuatore=attuatori_db->getString("name");
+									std::string tipo_attuatore= attuatori_db ->getString("type");
+									int code_attuatore= attuatori_db->getInt("code");
+									std::string query = " select comando from Comandi where cod_attuatore = "+ std::to_string(code_attuatore	) +";";
 									sql::ResultSet *comandi_db = MYSQL::Select_Query(query);
 									while(comandi_db->next()){
-										std::string comando=attuatori_db->getString("comando");
+										std::string comando=comandi_db->getString("comando");
 										comandi.push_back(comando);
 									}
-									Attuatore attuatore(code,tipo,nome,&comandi);
-									ambiente.getDispositivi()->push_back(attuatore);
+									user.addDispositivo(cod_ambiente,code_attuatore,nome_attuatore,tipo_attuatore,&comandi);
 							}
-							
-
-							user.getAmbienti()->push_back(ambiente);
 						}
 					}
 
@@ -193,7 +188,7 @@
 	
 	
 	
-	Json::Value Controller::Configura_ambiente(Json::Value data){
+	Json::Value Controller::Crea_Ambiente(Json::Value data){
 		Json::Value response;
 		User * Current_User = Controller::Auth(data["auth"].asString());
 		
@@ -227,65 +222,6 @@
 		return response;
 	}
 
-	Json::Value Controller::Inserisci_Sensori(Json::Value data){
-		
-		Json::Value response;
-		std::list<std::string> transaction;
-		User * Current_User = Controller::Auth(data["auth"].asString());
-		bool succes_flag = true;
-
-		if(Current_User == nullptr || Current_User->getAdmin() == false){
-			response["status"] = "Failed";
-			response["error"] = "Unauthorized";
-			response["data"] = "";
-			return response;
-		}
-		std::string cod_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
-		 auto entriesArray = data["data"]["sensors"];
-		 Json::Value::iterator sensors_to_add;
-		 std::string start_transaction = "START TRANSACTION;";
-		 transaction.push_back(start_transaction);
-		 for (sensors_to_add = entriesArray.begin(); sensors_to_add != entriesArray.end();sensors_to_add ++){
-
-			
-			
-			std::string query = "insert into Sensore (name,type,cod_sensore) values ('"+(*sensors_to_add)["name"].asString() +"','"+(*sensors_to_add)["kind"].asString() +"',"+std::to_string((*sensors_to_add)["code"].asInt()) + ");";
-			std::string query_1 = "insert into Sensore_Ambiente (cod_ambiente,cod_sensore) values ('"+ cod_ambiente +"',"+ std::to_string((*sensors_to_add)["code"].asInt())+");";
-			transaction.push_back(query);
-			transaction.push_back(query_1);
-		 }
-		 	std::string commit = "commit;";
-		 	transaction.push_back(commit);
-			
-			if (MYSQL::Queries(transaction) ==  true){
-				for (sensors_to_add = entriesArray.begin(); sensors_to_add != entriesArray.end();sensors_to_add ++){
-					std::string nome = (*sensors_to_add)["name"].asString();
-					int code = (*sensors_to_add)["code"].asInt();
-					std::string tipo = (*sensors_to_add)["kind"].asString();
-					Controller::User_mutex.lock();
-					Current_User->addSensore(cod_ambiente,code,nome,tipo);
-					Controller::User_mutex.unlock();
-				}
-			}
-			else {
-				succes_flag = false;
-				response["status"] = "Failed";
-				response["error"] = "Error in creating sensors ";
-				response["data"] = "";
-			}
-			 
-		
-		if (succes_flag == true){
-			response["status"] = "Succesfull";
-			response["error"] = "";
-			response["data"] = "insert completed";
-		}
-		 
-
-		 return response;
-
-
-	}
 	Json::Value Controller::Inserisci_Dispositivi(Json::Value data){
 		Json::Value response;
 		std::list<std::string> transaction;
@@ -314,9 +250,9 @@
 				std::list<std::string> commands;
 				std::string query = " insert into Dispositivo (name,type,code) values ('"+name+"','"+type+"',"+std::to_string(code)+");";
 				transaction.push_back(query);
-				query = "insert into Attuatore (cod_attuatore) values ("+std::to_string(code) +");";
+				query = "insert into Attuatore (code) values ("+std::to_string(code) +");";
 				transaction.push_back(query);
-				query = " insert into Dispositivo_Ambiente (cod_ambiente,code) values ("+cod_ambiente +","+std::to_string(code)+");";
+				query = " insert into Dispositivo_Ambiente (cod_ambiente,code) values ('"+cod_ambiente +"',"+std::to_string(code)+");";
 				transaction.push_back(query);
 				for(commands_to_add = commandsEntries.begin(); commands_to_add != commandsEntries.end(); commands_to_add ++ ){
 					std::string command = (*commands_to_add).asString();
@@ -330,9 +266,9 @@
 				
 				std::string query = " insert into Dispositivo (name,type,code) values ('"+name+"','"+type+"',"+std::to_string(code)+");";
 				transaction.push_back(query);
-				query = "insert into Sensore (cod_attuatore) values ("+std::to_string(code) +");";
+				query = "insert into Sensore (code) values ("+std::to_string(code) +");";
 				transaction.push_back(query);
-				query = " insert into Dispositivo_Ambiente (cod_ambiente,code) values ("+cod_ambiente +","+std::to_string(code)+");";
+				query = " insert into Dispositivo_Ambiente (cod_ambiente,code) values ('"+cod_ambiente +"',"+std::to_string(code)+");";
 				transaction.push_back(query);
 				Current_User->addDispositivo(cod_ambiente,code,name,type,nullptr);
 
@@ -346,6 +282,15 @@
 				int code = (*devices_to_add)["code"].asInt();
 				Current_User->deleteDispositivo(cod_ambiente,code);
 			}
+			response["status"] = "Failed";
+			response["error"] = "Error in creating sensors ";
+			response["data"] = "";
+
+		}
+		else{
+			response["status"] = "Succesfull";
+			response["error"] = "";
+			response["data"] = "insert completed";
 
 		}
 			
@@ -388,16 +333,17 @@
 	}
 			
 	Json::Value Controller::Visualizza_Dispositivi(Json::Value data){
-			Json::Value response;
+		Json::Value response;
 
 		User * Current_User = Controller::Auth(data["auth"].asString());
-		std::string cod_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
+		
 		if(Current_User == nullptr || Current_User->getAdmin() == false){
 			response["status"] = "Failed";
 			response["error"] = "Unauthorized";
 			response["data"] = "";
 			return response;
 		}
+		std::string cod_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
 		int i = 0;
 		Ambiente * ambiente = Current_User->getAmbiente(cod_ambiente);
 		if(ambiente == nullptr){
@@ -406,26 +352,27 @@
 			response["data"] = "";
 			return response;
 		}
-		std::list<Dispositivo> * dispositivi = Current_User->getDispositivi(cod_ambiente);
+		std::list<Dispositivo *> * dispositivi = Current_User->getDispositivi(cod_ambiente);
 		response["status"] = "Succesfull";
 		response["data"]["devices"]= Json::Value(Json::arrayValue);
-		std::list<Dispositivo>::iterator dispositivi_iterator;
+		std::list<Dispositivo *>::iterator dispositivi_iterator;
 		for(dispositivi_iterator = dispositivi->begin();dispositivi_iterator != dispositivi->end();dispositivi_iterator ++)
 		{	
 			Json::Value device;
-			if(typeid(dispositivi_iterator) == typeid(Sensore)){
-				device["name"] =(*dispositivi_iterator).getNome();
-				device["kind"] = (*dispositivi_iterator).getTipo();
-				device["code"] = (*dispositivi_iterator).getCodice();
+			
+			if((*dispositivi_iterator)->get_device_type() == 0){
+				device["name"] =(*dispositivi_iterator)->getNome();
+				device["kind"] = (*dispositivi_iterator)->getTipo();
+				device["code"] = (*dispositivi_iterator)->getCodice();
 				response["data"]["devices"][i] = device;
 			}
-			else {
+			else if((*dispositivi_iterator)->get_device_type() == 1) {
 				std::list<std::string>::iterator commands_iterator;
-				device["name"] =(*dispositivi_iterator).getNome();
-				device["kind"] = (*dispositivi_iterator).getTipo();
-				device["code"] = (*dispositivi_iterator).getCodice();
+				device["name"] =(*dispositivi_iterator)->getNome();
+				device["kind"] = (*dispositivi_iterator)->getTipo();
+				device["code"] = (*dispositivi_iterator)->getCodice();
 				int x = 0;
-				for(commands_iterator = static_cast<Attuatore *>(&(*dispositivi_iterator))->getComandi()->begin();commands_iterator != static_cast<Attuatore *>(&(*dispositivi_iterator))->getComandi()->end();commands_iterator ++){
+				for(commands_iterator = static_cast<Attuatore *>((*dispositivi_iterator))->getComandi()->begin();commands_iterator != static_cast<Attuatore *>((*dispositivi_iterator))->getComandi()->end();commands_iterator ++){
 					device["commands"][x] = *commands_iterator;
 					x++;
 				}
@@ -439,6 +386,60 @@
 				
 		return response;
 		
+	}
+
+	Json::Value Controller::Elimina_Dispositivi(Json::Value data){
+		Json::Value response;
+		std::list<std::string> transaction;
+		User * Current_User = Controller::Auth(data["auth"].asString());
+		
+		if(Current_User == nullptr || Current_User->getAdmin() == false){
+			response["status"] = "Failed";
+			response["error"] = "Unauthorized";
+			response["data"] = "";
+			return response;
+		}
+
+		std::string cod_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
+		int i = 0;
+		Ambiente * ambiente = Current_User->getAmbiente(cod_ambiente);
+		if(ambiente == nullptr){
+			response["status"] = "Failed";
+			response["error"] = "Ambiente Not Found";
+			response["data"] = "";
+			return response;
+		}
+		auto entriesArray = data["data"]["devices"];
+		Json::Value::iterator devices_to_delete;
+		std::string start_transaction = "START TRANSACTION;";
+		transaction.push_back(start_transaction);
+		for (devices_to_delete = entriesArray.begin(); devices_to_delete != entriesArray.end();devices_to_delete ++){
+			int code_device = (*devices_to_delete).asInt();
+			std::string query = "delete from Dispositivo where code = "+std::to_string(code_device) + ";";
+			transaction.push_back(query);
+		}
+		std::string commit = "commit;";
+		transaction.push_back(commit);
+		if (MYSQL::Queries(transaction) ==  true){
+			for (devices_to_delete = entriesArray.begin(); devices_to_delete != entriesArray.end();devices_to_delete ++){
+				Controller::User_mutex.lock();
+				int cod_sensore = (*devices_to_delete).asInt();
+				Current_User->deleteDispositivo(cod_ambiente,cod_sensore);
+				Controller::User_mutex.unlock();
+			}
+			response["status"] = "Succesfull";
+			response["error"] = "";
+			response["data"] = "deletion completed";
+			return response;
+
+		}
+		else{
+			response["status"] = "Failed";
+			response["error"] = "Error in deleting sensors";
+			response["data"] = "";
+			return response;
+		}
+
 	}
 
 	/*

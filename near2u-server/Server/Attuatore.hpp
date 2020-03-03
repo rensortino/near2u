@@ -13,6 +13,9 @@ class Attuatore : public Dispositivo{
 
         std::list<std::string> * getComandi();
 
+        device_type get_device_type();
+
+
 
     private:
 

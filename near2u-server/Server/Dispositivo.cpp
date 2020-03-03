@@ -21,6 +21,8 @@ int Dispositivo::getCodice(){
     return codice;
 }
 
+device_type Dispositivo::get_device_type(){
+    
+}
 Dispositivo::~Dispositivo(){
-
 }

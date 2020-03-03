@@ -13,6 +13,8 @@ class Sensore : public Dispositivo
 public:
 	Sensore(int cod, std::string& name, std::string& type);
 
+	device_type get_device_type();
+
 };
 
 #endif

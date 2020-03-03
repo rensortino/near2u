@@ -50,12 +50,8 @@
         Ambiente ambiente(nome,codice);
         ambienti.push_back(ambiente);
     }
-    void User::addSensore(std::string& cod_ambiente,int code, std::string& nome, std::string& tipo ){
-        
-        Ambiente * ambiente = User::getAmbiente(cod_ambiente);
-        ambiente->addSensore(code,nome,tipo);
-    }
-    std::list<Dispositivo> * User::getDispositivi(std::string& cod_ambiente){
+    
+    std::list<Dispositivo *> * User::getDispositivi(std::string& cod_ambiente){
         Ambiente * ambiente;
         ambiente = User::getAmbiente(cod_ambiente);
         if(ambiente != nullptr){
@@ -67,17 +63,6 @@
         Ambiente * ambiente;
         ambiente = User::getAmbiente(cod_ambiente);
         ambiente ->deleteDispositivo(code);
-    }
-
-    void User::addAttuatore(std::string& cod_ambiente,int code, std::string& nome, std::string& tipo){
-        Ambiente * ambiente = User::getAmbiente(cod_ambiente);
-        ambiente->addAttuatore(code,nome,tipo);
-        
-
-    }
-    void User::addComando(std::string& cod_ambiente,int code_attuatore, std::string& comando){
-        Ambiente * ambiente = User::getAmbiente(cod_ambiente);
-        ambiente->addComando(code_attuatore,comando);
     }
     
     void User::addDispositivo(std::string& cod_ambiente,int code, std::string& nome, std::string& tipo, std::list<std::string> * commands){

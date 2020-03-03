@@ -29,13 +29,11 @@ public:
 	Json::Value Topic_Ambiente(Json::Value data);
 	Json::Value Register(Json::Value data);
 	Json::Value Login(Json::Value data);
-	Json::Value Configura_ambiente(Json::Value data);
-	Json::Value Inserisci_Sensori(Json::Value data);
+	Json::Value Crea_Ambiente(Json::Value data);
 	Json::Value Visualizza_Ambienti(Json::Value data);
-	Json::Value Visualizza_Sensori(Json::Value data);
-	Json::Value Elimina_sensori(Json::Value data);
 	Json::Value Inserisci_Dispositivi(Json::Value data);
 	Json::Value Visualizza_Dispositivi(Json::Value data);
+	Json::Value Elimina_Dispositivi(Json::Value data);
 
 
 	

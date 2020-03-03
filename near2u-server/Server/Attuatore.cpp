@@ -8,3 +8,8 @@ Attuatore::Attuatore(int code, std::string& type, std::string& name,std::list<st
 std::list<std::string> * Attuatore::getComandi(){
     return &comandi;
 }
+
+
+device_type Attuatore::get_device_type(){
+    return device_type::attuatore;
+}

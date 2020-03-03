@@ -11,11 +11,47 @@
 
 #define ADDRESS     "tcp://localhost:8082"
 #define CLIENTID    "ambienti_simulation"
+#define CLIENTID_ATTUATORI "attuatori_ambienti"
 #define QOS         1
 #define TIMEOUT     10000L
 
 
 // questa funzione serve a simulare la pubblicazione sul broker mqtt da parte dei dispositivi dei vari ambienti
+
+volatile MQTTClient_deliveryToken deliveredtoken;
+
+void delivered(void *context, MQTTClient_deliveryToken dt)
+{
+    printf("Message with token value %d delivery confirmed\n", dt);
+    deliveredtoken = dt;
+}
+
+int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *message)
+{
+    int i;
+    char* payloadptr;
+
+    printf("Message arrived\n");
+    printf("     topic: %s\n", topicName);
+    printf("   message: ");
+
+    payloadptr =(char*) message->payload;
+    for(i=0; i<message->payloadlen; i++)
+    {
+        putchar(*payloadptr++);
+    }
+    putchar('\n');
+    MQTTClient_freeMessage(&message);
+    MQTTClient_free(topicName);
+    return 1;
+}
+
+void connlost(void *context, char *cause)
+{
+    printf("\nConnection lost\n");
+    printf("     cause: %s\n", cause);
+}
+
 void sensors_pubblish(){
 
     MQTTClient client;
@@ -34,12 +70,30 @@ void sensors_pubblish(){
         printf("Failed to connect, return code %d\n", rc);
         exit(-1);
     }
+    MQTTClient client_attuatori;
+    int rc1;
+    int ch1;
+
+    MQTTClient_create(&client_attuatori, ADDRESS, CLIENTID_ATTUATORI,
+        MQTTCLIENT_PERSISTENCE_NONE, NULL);
+    conn_opts.keepAliveInterval = 20;
+    conn_opts.cleansession = 1;
+
+    MQTTClient_setCallbacks(client_attuatori, NULL, connlost, msgarrvd, delivered);
+
+    if ((rc1 = MQTTClient_connect(client_attuatori, &conn_opts)) != MQTTCLIENT_SUCCESS)
+    {
+        printf("Failed to connect, return code %d\n", rc1);
+        exit(EXIT_FAILURE);
+    }
+    std::list<std::string> lista_topic_attuatori;
+    std::list<std::string>::iterator topic_iterator;
 
     Controller * controller = Controller::getIstance();
 
     while(true){
         std::this_thread::sleep_for (std::chrono::seconds(5));
-
+        std::cout<< "checking for sensors" << std::endl;
         std::list<User>::iterator users_iterator;
 
         controller->getUser_mutex()->lock_shared();
@@ -48,11 +102,11 @@ void sensors_pubblish(){
             std::list<Ambiente> * ambienti = (*users_iterator).getAmbienti(); 
             for(ambienti_itarator = ambienti->begin(); ambienti_itarator != ambienti->end(); ambienti_itarator ++){
                 std::string topic = (*ambienti_itarator).getcodAmbiente();
-                std::list<Dispositivo>::iterator dispositivi_iterator;
-                std::list<Dispositivo> * dispositivi = (*ambienti_itarator).getDispositivi(); 
+                std::list<Dispositivo *>::iterator dispositivi_iterator;
+                std::list<Dispositivo *> * dispositivi = (*ambienti_itarator).getDispositivi(); 
                 for(dispositivi_iterator = dispositivi->begin();dispositivi_iterator != dispositivi->end(); dispositivi_iterator ++){
-                    if(typeid(dispositivi_iterator) == typeid(Sensore)){
-                        std::string message = "{\"code\":" + std::to_string(dispositivi_iterator->getCodice()) + ",\"name\":\""+ dispositivi_iterator->getNome() + "\",\"type\":\""+dispositivi_iterator->getTipo() +" \",\"measurement\":"+std::to_string((float)rand()/(float)(RAND_MAX/15)) +" }";
+                    if((*dispositivi_iterator)->get_device_type() == device_type::sensore){
+                        std::string message = "{\"code\":" + std::to_string((*dispositivi_iterator)->getCodice()) + ",\"name\":\""+ (*dispositivi_iterator)->getNome() + "\",\"type\":\""+(*dispositivi_iterator)->getTipo() +" \",\"measurement\":"+std::to_string((float)rand()/(float)(RAND_MAX/15)) +" }";
                         std::cout << message << std::endl;
                         pubmsg.payload = &message;
                         pubmsg.payloadlen = message.size();
@@ -62,6 +116,25 @@ void sensors_pubblish(){
                         rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
                         printf("Message with delivery token %d delivered\n", token);
                     }
+                    else if((*dispositivi_iterator)->get_device_type() == device_type::attuatore){
+                       std::string topic_attuatore = (*ambienti_itarator).getcodAmbiente() + std::to_string((*dispositivi_iterator)->getCodice()); 
+                       if(lista_topic_attuatori.empty()){
+                           std::cout << "attuatore: " + std::to_string((*dispositivi_iterator)->getCodice()) + "subscribing to: " + topic_attuatore   << std::endl;
+                            MQTTClient_subscribe(client_attuatori, topic_attuatore.c_str(), QOS);
+                       }
+                       for(topic_iterator = lista_topic_attuatori.begin(); topic_iterator != lista_topic_attuatori.end(); topic_iterator ++ ){
+                            if((*topic_iterator).compare(topic_attuatore) == 0){
+                                break;
+                            }
+                            else{
+                                std::cout << "attuatore: " + std::to_string((*dispositivi_iterator)->getCodice()) + "subscribing to: " + topic_attuatore   << std::endl;
+                                MQTTClient_subscribe(client_attuatori, topic_attuatore.c_str(), QOS);
+
+                            }
+                        }
+                        lista_topic_attuatori.push_back(topic_attuatore);
+                       
+                    }
                 }
             }
         }
@@ -70,6 +143,12 @@ void sensors_pubblish(){
 
         
     }
+    
+    for(topic_iterator = lista_topic_attuatori.begin(); topic_iterator != lista_topic_attuatori.end(); topic_iterator ++ ){
+        MQTTClient_unsubscribe(client, (*topic_iterator).c_str());
+    }
+    MQTTClient_disconnect(client_attuatori, 10000);
+    MQTTClient_destroy(&client_attuatori);
     MQTTClient_disconnect(client, 10000);
     MQTTClient_destroy(&client);
     exit(0);

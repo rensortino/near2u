@@ -21,12 +21,9 @@ public:
      void setAdmin(bool role);
     Ambiente * getAmbiente(std::string& cod_Ambiente);
     void addAmbiente(std::string& nome, std::string& codice );
-    void addSensore(std::string& cod_ambiente,int code, std::string& nome, std::string& tipo);
-    void addAttuatore(std::string& cod_ambiente,int code, std::string& nome, std::string& tipo);
-    void addComando(std::string& cod_ambiente,int code_attuatore, std::string& comando);
-    std::list<Dispositivo> * getDispositivi(std::string& code);
+    std::list<Dispositivo *> * getDispositivi(std::string& code);
     void deleteDispositivo(std::string& cod_ambiente,int code);
-    void addDispositivo(std::string& cod_ambiente,int code, std::string& nome, std::string& tipo, std::list<std::string> * commands);
+    void addDispositivo(std::string& cod_ambiente,int code, std::string& nome, std::string& tipo, std::list<std::string>* commands);
 private:
     std::string name;
     std::string surname;
