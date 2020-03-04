@@ -99,6 +99,7 @@
 
         if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS)
         {
+            printf("ciao");
             printf("Failed to connect, return code %d\n", rc);
             return false;
         }

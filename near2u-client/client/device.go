@@ -23,32 +23,34 @@ type Sensor struct {
 	Measurement float64 `json:"measurement"`
 }
 
-func NewDevice(code int, name, kind string, commands []string) interface{} {
+func NewDevice(code int, name, kind string) Device {
 
 	newDevice := Device {
 		code,
 		name,
 		kind,
 	}
-	if commands == nil {
-		newSensor := Sensor{
-			newDevice,
-			0.0,
-		}
-		return newSensor
-	}
-	if commands != nil {
-		newActuator := Actuator {
-			newDevice,
-			commands,
-		}
-		return newActuator
-	}
-
-	return nil
+	return newDevice
 }
 
-func (s * Sensor) Append(deviceList []interface{}) {
+func NewSensor(dev Device) * Sensor {
+	newSensor := &Sensor{
+		dev,
+		0.0,
+	}
+	return newSensor
+}
+
+func NewActuator(dev Device, commands []string) * Actuator {
+
+	newActuator := &Actuator{
+		dev,
+		commands,
+	}
+	return newActuator
+}
+
+func (s * Sensor) Append(deviceList []interface{}) ([]interface{}, bool) {
 
 	// The following struct is needed to flatten the JSON before transmitting it to the server
 	sensor := struct {
@@ -61,10 +63,23 @@ func (s * Sensor) Append(deviceList []interface{}) {
 		s.Kind,
 	}
 
-	deviceList = append(deviceList, sensor)
+	for _, dev := range deviceList {
+		switch d := dev.(type) {
+		case Sensor:
+			if d.Code == s.Code {
+				return deviceList, false
+			}
+		case Actuator:
+			if d.Code == s.Code {
+				return deviceList, false
+			}
+		}
+	}
+
+	return append(deviceList, sensor), true
 }
 
-func (a * Actuator) Append(deviceList []interface{}) {
+func (a * Actuator) Append(deviceList []interface{}) ([]interface{}, bool) {
 
 	// The following struct is needed to flatten the JSON before transmitting it to the server
 	actuator := struct {
@@ -79,7 +94,20 @@ func (a * Actuator) Append(deviceList []interface{}) {
 		a.Commands,
 	}
 
-	deviceList = append(deviceList, actuator)
+	for _, dev := range deviceList {
+		switch d := dev.(type) {
+		case Sensor:
+			if d.Code == a.Code {
+				return deviceList, false
+			}
+		case Actuator:
+			if d.Code == a.Code {
+				return deviceList, false
+			}
+		}
+	}
+
+	return append(deviceList, actuator), true
 }
 
 func (a * Actuator) SendCommand(envName, command string) string {
@@ -87,9 +115,11 @@ func (a * Actuator) SendCommand(envName, command string) string {
 		if command == comm {
 			data := struct {
 				EnvName string `json:"envname"`
+				ActCode int `json:"code"`
 				Command string `json:"command"`
 			} {
 				envName,
+				a.Code,
 				command,
 			}
 			res := utils.SocketCommunicate("invia_comando", clientInstance.LoggedUser, data)

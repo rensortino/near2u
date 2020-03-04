@@ -33,7 +33,8 @@ func GetClientInstance() *Client {
 func SetCurrentEnv(currentEnv * Environment, name string) {
 	if currentEnv.Name != name {
 		currentEnv.Name = name
-		currentEnv.DeviceMap = make(map[string]interface{}) // Initialize the map to populate it with the devices
+		currentEnv.SensorMap = make(map[string]Sensor) // Initialize the map to populate it with the devices
+		currentEnv.ActuatorMap = make(map[string]Actuator)
 		currentEnv.LastModified = 0
 	}
 }
@@ -50,22 +51,24 @@ func (c *Client) GetEnvList(envNameCh chan string, errCh chan string) {
 
 	envNameCh <- "start" // Used to enter the correct case in the select
 	for _ ,v := range res["data"].(map[string]interface{})["environments"].([]interface{}) {
+		log.Printf("in client %v", v)
 		envNameCh <- v.(string)
 	}
 	close(envNameCh)
 }
 
-func (c *Client) GetSensorData(topic string, rtCh chan map[string]interface{}) {
+func (c *Client) GetSensorData(topic string, rtCh chan interface{}, startCh chan bool) {
 
+	<- startCh
 	c.MQTTClient.Subscribe(topic, 0, func(client mqtt.Client, msg mqtt.Message) {
 		// Executes every time a message is published on the topic
-		sensors := make(map[string]interface{})
+		sensor := Sensor{}
 		//env := Environment{SensorMap:sensors}
 
-		json.Unmarshal(msg.Payload(), &sensors)
+		json.Unmarshal(msg.Payload(), &sensor)
 
 		log.Println("Data Received")
-		log.Println(sensors)
+		log.Println(sensor)
 		/*
 			 Payload format:
 			{"ID":"env1","SensorMap":{
@@ -74,12 +77,12 @@ func (c *Client) GetSensorData(topic string, rtCh chan map[string]interface{}) {
 			}}
 		*/
 
-		rtCh <- sensors["SensorMap"].(map[string]interface{})
+		rtCh <- &sensor
 	})
 }
 
 // Gracefully stops getting data from the broker
-func (c *Client) StopGettingData(topic string, rtCh chan map[string]interface{}, quit chan bool) {
+func (c *Client) StopGettingData(topic string, rtCh chan interface{}, quit chan bool) {
 	c.MQTTClient.Unsubscribe(topic)
 	// Empties the channel before closing it
 	select {

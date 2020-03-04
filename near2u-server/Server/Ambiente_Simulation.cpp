@@ -53,6 +53,7 @@ void connlost(void *context, char *cause)
 }
 
 void sensors_pubblish(){
+     std::this_thread::sleep_for (std::chrono::seconds(5));
 
     MQTTClient client;
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
@@ -107,8 +108,8 @@ void sensors_pubblish(){
                 for(dispositivi_iterator = dispositivi->begin();dispositivi_iterator != dispositivi->end(); dispositivi_iterator ++){
                     if((*dispositivi_iterator)->get_device_type() == device_type::sensore){
                         std::string message = "{\"code\":" + std::to_string((*dispositivi_iterator)->getCodice()) + ",\"name\":\""+ (*dispositivi_iterator)->getNome() + "\",\"type\":\""+(*dispositivi_iterator)->getTipo() +" \",\"measurement\":"+std::to_string((float)rand()/(float)(RAND_MAX/15)) +" }";
-                        std::cout << message << std::endl;
-                        pubmsg.payload = &message;
+                        printf(message.c_str());
+                        pubmsg.payload = (void *)(message.c_str());
                         pubmsg.payloadlen = message.size();
                         pubmsg.qos = QOS;
                         pubmsg.retained = 0;
