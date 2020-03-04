@@ -361,13 +361,14 @@
 		{	
 			Json::Value device;
 			
-			if((*dispositivi_iterator)->get_device_type() == 0){
+			if((*dispositivi_iterator)->get_device_type() == 0 && data["data"]["type"].asString().compare("sensors") == 0){
 				device["name"] =(*dispositivi_iterator)->getNome();
 				device["kind"] = (*dispositivi_iterator)->getTipo();
 				device["code"] = (*dispositivi_iterator)->getCodice();
 				response["data"]["devices"][i] = device;
+				i++;
 			}
-			else if((*dispositivi_iterator)->get_device_type() == 1) {
+			else if((*dispositivi_iterator)->get_device_type() == 1 && data["data"]["type"].asString().compare("actuators")== 0) {
 				std::list<std::string>::iterator commands_iterator;
 				device["name"] =(*dispositivi_iterator)->getNome();
 				device["kind"] = (*dispositivi_iterator)->getTipo();
@@ -378,10 +379,11 @@
 					x++;
 				}
 				response["data"]["devices"][i] = device;
+				i++;
 				
 			}
 			
-			i++;
+			
 		}
         response["status"] = "Succesfull";
 				

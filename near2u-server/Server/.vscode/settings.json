@@ -51,6 +51,9 @@
         "typeinfo": "cpp",
         "condition_variable": "cpp",
         "mutex": "cpp",
-        "shared_mutex": "cpp"
+        "shared_mutex": "cpp",
+        "bitset": "cpp",
+        "forward_list": "cpp",
+        "set": "cpp"
     }
 }

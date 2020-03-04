@@ -4,14 +4,16 @@
 #include "Thread_Pool.hpp"
 #include "Ambiente_Simulation.cpp"
 
-int main(){
 
+
+int main(){
     auto tp =  Thread_Pool();
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     // faccio partire il broker mqtt
     system("mosquitto -p 8082 &");
     // creo un thread che simula la pubblicazione dei vari sensori per ogni ambiente su MQTT
     std::thread th1(sensors_pubblish);
+    
   if (sockfd == 0) {
     std::cout << "Failed to create socket. errno: " << errno << std::endl;
     exit(EXIT_FAILURE);
@@ -33,7 +35,7 @@ int main(){
   }
 
   while(true){
-      auto addrlen = sizeof(sockaddr);
+    auto addrlen = sizeof(sockaddr);
     int connection = accept(sockfd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
     if (connection < 0) {
       std::cout << "Failed to grab connection. errno: " << errno << std::endl;
@@ -48,9 +50,12 @@ int main(){
     // Add some work to the queue
     tp.queueWork(connection, request);
   }
+
   
+  tp.~Thread_Pool();
   th1.join();
   close(sockfd);
+  exit(0);
 
 
 }

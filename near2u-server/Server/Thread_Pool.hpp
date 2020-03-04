@@ -35,5 +35,6 @@
 
         void TaskWork();
         void ElaborateRequest(const std::pair<int,std::string>);
+        void example();
 
     };

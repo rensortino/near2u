@@ -25,7 +25,8 @@
         if (numberOfThreads == 0) {
         numberOfThreads = 1;
         }
-        for(unsigned i = 0 ; i < numberOfThreads; i ++){
+        unsigned i ;
+        for(i = 0 ; i < numberOfThreads; i ++){
             threads.push_back(std::thread(&Thread_Pool::TaskWork,this));
             // we populate the thread vector indicating the function each thread should execute
         }
@@ -112,9 +113,12 @@
         close(request.first);
     }
 
+    void Thread_Pool::example(){
+        std::cout << "prova adsdadd" << std::endl;
+    }
 
-    void Initialize()
-    {
+
+    void Initialize(){
     s_mapStringValues["register"] = Register;
     s_mapStringValues["login"] = Login;
     s_mapStringValues["topic_ambiente"] = Topic_Ambiente;
