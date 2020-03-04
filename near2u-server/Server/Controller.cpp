@@ -16,6 +16,11 @@
       return instance;
 
 	}
+
+	Controller::Controller(){
+		
+
+	}
 	Controller *Controller::instance = 0;
 
 	std::list<User> * Controller::getUsers(){

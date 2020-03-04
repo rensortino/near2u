@@ -8,6 +8,7 @@
 #include "Ambiente.hpp"
 #include "User.hpp"
 #include <shared_mutex>
+#include "MQTTClient.h"
 
 
 class Controller
@@ -23,6 +24,7 @@ private:
 
 
 public:
+	Controller();
 	std::list<User> * getUsers();
 	std::shared_mutex * getUser_mutex();
 	static Controller* getIstance();
