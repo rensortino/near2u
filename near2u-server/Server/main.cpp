@@ -11,7 +11,7 @@ int main(){
     // faccio partire il broker mqtt
     system("mosquitto -p 8082 &");
     // creo un thread che simula la pubblicazione dei vari sensori per ogni ambiente su MQTT
-    //std::thread th1(sensors_pubblish);
+    std::thread th1(sensors_pubblish);
   if (sockfd == 0) {
     std::cout << "Failed to create socket. errno: " << errno << std::endl;
     exit(EXIT_FAILURE);
@@ -49,7 +49,7 @@ int main(){
     tp.queueWork(connection, request);
   }
   
-  //th1.join();
+  th1.join();
   close(sockfd);
 
 

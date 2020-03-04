@@ -24,6 +24,7 @@ public:
     std::list<Dispositivo *> * getDispositivi(std::string& code);
     void deleteDispositivo(std::string& cod_ambiente,int code);
     void addDispositivo(std::string& cod_ambiente,int code, std::string& nome, std::string& tipo, std::list<std::string>* commands);
+    bool inviaComando(std::string& cod_ambiente, int code_attuatore, std::string& comando);
 private:
     std::string name;
     std::string surname;

@@ -13,3 +13,16 @@ std::list<std::string> * Attuatore::getComandi(){
 device_type Attuatore::get_device_type(){
     return device_type::attuatore;
 }
+
+bool Attuatore::controllaComando(std::string& comando){
+
+    std::list<std::string>::iterator comandi_iterator;
+
+    for(comandi_iterator = comandi.begin(); comandi_iterator != comandi.end(); comandi_iterator ++){
+        if((*comandi_iterator).compare(comando)){
+            return true;
+        }
+    }
+    return false;
+
+}

@@ -7,6 +7,12 @@
 
 #include "Sensore.h"
 #include "Attuatore.hpp"
+#include "MQTTClient.h"
+
+#define ADDRESS     "tcp://localhost:8082"
+#define CLIENTSERVER    "server"
+#define QOS         1
+#define TIMEOUT     10000L
 
 class Ambiente
 {
@@ -18,7 +24,8 @@ class Ambiente
 	void addSensore(int code, std::string& nome, std::string& tipo);
 	void deleteDispositivo(int cod_dispositivo);
 	void addDispositivo(int code, std::string& nome, std::string& tipo, std::list<std::string> * commands);
-
+	Dispositivo * getDispositivo(int code);
+	bool inviaComando(int code_attuatore, std::string& comando);
 private:
 
 	std::string Nome;

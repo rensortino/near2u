@@ -70,5 +70,19 @@
         ambiente->addDispositivo(code,nome,tipo,commands);
         
     }
+
+    bool User::inviaComando(std::string& cod_ambiente, int code_attuatore, std::string& comando){
+
+        Ambiente * ambiente = getAmbiente(cod_ambiente);
+
+        if(ambiente == nullptr){
+            return false;
+        }
+        if(ambiente->inviaComando(code_attuatore,comando) == false){
+            return false;
+        }
+        return true;
+
+    }
     
 

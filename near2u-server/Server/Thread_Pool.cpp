@@ -10,7 +10,8 @@
                         Inseresci_Dispositivi,
                         Visualizza_Ambienti,
                         Visualizza_Dispositivi,
-                        Elimina_Dispositivi
+                        Elimina_Dispositivi,
+                        Invia_Comando
                         };
     static std::map<std::string, StringValue> s_mapStringValues;
 
@@ -99,6 +100,9 @@
             case Elimina_Dispositivi:
                 response = controller->Elimina_Dispositivi(requestjson).toStyledString();
                 break;
+            case Invia_Comando:
+                response = controller->Invia_Comando(requestjson).toStyledString();
+                break;
             default:
                 response = "{\"status\" : \"Service not avaible\"}"; 
                 break;
@@ -119,6 +123,7 @@
     s_mapStringValues["visualizza_ambienti"] = Visualizza_Ambienti;
     s_mapStringValues["elimina_dispositivi"] = Elimina_Dispositivi;
     s_mapStringValues["visualizza_dispositivi"] = Visualizza_Dispositivi;
+    s_mapStringValues["invia_comando"] = Invia_Comando;
     
     std::cout << "s_mapStringValues contains " 
         << s_mapStringValues.size() 

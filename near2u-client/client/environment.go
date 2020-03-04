@@ -179,7 +179,7 @@ func (e * Environment) SendCommand(code, command string, resCh, errCh chan strin
 		errCh <- "Actuator has no commands"
 	}
 
-	res := act.(Actuator).SendCommand(e.Name, command)
+	res := act.(* Actuator).SendCommand(e.Name, command)
 
 	if res != "error" {
 		resCh <- res

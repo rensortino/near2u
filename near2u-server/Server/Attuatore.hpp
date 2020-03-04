@@ -15,6 +15,8 @@ class Attuatore : public Dispositivo{
 
         device_type get_device_type();
 
+        bool controllaComando(std::string& comando);
+
 
 
     private:

@@ -34,6 +34,7 @@ public:
 	Json::Value Inserisci_Dispositivi(Json::Value data);
 	Json::Value Visualizza_Dispositivi(Json::Value data);
 	Json::Value Elimina_Dispositivi(Json::Value data);
+	Json::Value Invia_Comando(Json::Value data);
 
 
 	

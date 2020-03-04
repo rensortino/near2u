@@ -147,7 +147,7 @@ func (c *Client) CreateEnv(envName string, currentEnv * Environment, resCh, errC
 
 	if res["status"] == "Succesfull" {
 		SetCurrentEnv(currentEnv, envName)
-		resCh <- res["status"]
+		resCh <- res["status"].(string)
 		return
 	} else {
 		errCh <- res["error"].(string)

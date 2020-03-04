@@ -443,54 +443,35 @@
 
 	}
 
-	/*
-	Json::Value Controller::Elimina_sensori(Json::Value data){
+	Json::Value Controller::Invia_Comando(Json::Value data){
 		Json::Value response;
-		std::list<std::string> transaction;
 		User * Current_User = Controller::Auth(data["auth"].asString());
-
-		if(Current_User == nullptr || Current_User->getAdmin() == false){
+		
+		if(Current_User == nullptr){
 			response["status"] = "Failed";
 			response["error"] = "Unauthorized";
 			response["data"] = "";
 			return response;
 		}
-		std::string cod_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
-		auto entriesArray = data["data"]["sensors"];
-		Json::Value::iterator sensors_to_delete;
-		std::string start_transaction = "START TRANSACTION;";
-		transaction.push_back(start_transaction);
-		for (sensors_to_delete = entriesArray.begin(); sensors_to_delete != entriesArray.end();sensors_to_delete ++){
-			
-			std::string query = "delete from Sensore where cod_sensore = "+std::to_string((*sensors_to_delete).asInt()) + ";";
-			transaction.push_back(query);
-		}
-		std::string commit = "commit;";
-		transaction.push_back(commit);
-			
-		if (MYSQL::Queries(transaction) ==  true){
-			for (sensors_to_delete = entriesArray.begin(); sensors_to_delete != entriesArray.end();sensors_to_delete ++){
-				Controller::User_mutex.lock();
-				int cod_sensore = (*sensors_to_delete).asInt();
-				Current_User->deleteSensore(cod_ambiente,cod_sensore);
-				Controller::User_mutex.unlock();
-			}
-					
-					
+
+		std::string code_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
+		int code = data["data"]["code"].asInt();
+		std::string comando = data["data"]["command"].asString();
+
+		if(Current_User->inviaComando(code_ambiente,code,comando)){
+			response["status"] = "Succesfull";
+			response["error"] = "";
+			response["data"] = "command sent sucessfully";
 		}
 		else{
 			response["status"] = "Failed";
-			response["error"] = "Error in deleting sensors";
+			response["error"] = "Command do not send";
 			response["data"] = "";
-			return response;
 		}
-		response["status"] = "Succesfull";
-		response["error"] = "";
-		response["data"] = "deletion completed";
-		return response;
-	}
-	*/
 
+		return response;
+
+	}
 
 
 
