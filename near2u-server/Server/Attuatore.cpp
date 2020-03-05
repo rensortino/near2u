@@ -19,7 +19,7 @@ bool Attuatore::controllaComando(std::string& comando){
     std::list<std::string>::iterator comandi_iterator;
 
     for(comandi_iterator = comandi.begin(); comandi_iterator != comandi.end(); comandi_iterator ++){
-        if((*comandi_iterator).compare(comando)){
+        if((*comandi_iterator).compare(comando) == 0){
             return true;
         }
     }

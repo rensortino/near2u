@@ -99,14 +99,13 @@
 
         if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS)
         {
-            printf("ciao");
             printf("Failed to connect, return code %d\n", rc);
             return false;
         }
 
         std::string message = "{\"code\":" + std::to_string(attuatore->getCodice()) + ",\"command\":\""+ comando + "\"}";
         std::cout << message << std::endl;
-        pubmsg.payload = &message;
+        pubmsg.payload = (void *)message.c_str();
         pubmsg.payloadlen = message.size();
         pubmsg.qos = QOS;
         pubmsg.retained = 0;

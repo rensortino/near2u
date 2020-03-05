@@ -1,18 +1,16 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"net/url"
-	"os"
-	"strconv"
-	"time"
-
 	"./client"
 	"./utils"
+	"fmt"
 	qtcore "github.com/therecipe/qt/core"
 	qtgui "github.com/therecipe/qt/gui"
 	qt "github.com/therecipe/qt/widgets"
+	"net/url"
+	"os"
+	"regexp"
+	"strconv"
 )
 
 var (
@@ -90,6 +88,12 @@ func getHomepageWidget() *qt.QWidget {
 		changeWindow(widget, getConfigureEnvWidget())
 	})
 	layout.AddWidget(confEnvBtn, 0, 0)
+
+	sendCmdBtn := qt.NewQPushButton2("Send Command", nil)
+	sendCmdBtn.ConnectClicked(func(checked bool) {
+		changeWindow(widget, getSendCommandWidget())
+	})
+	layout.AddWidget(sendCmdBtn, 0, 0)
 
 	return widget
 }
@@ -268,7 +272,6 @@ func getConfigureEnvWidget() *qt.QWidget {
 		envList := make([]string, 0)
 		for env := range envNameCh {
 			envList = append(envList, env)
-			log.Printf("in main %v", envList)
 		}
 		envListCB.AddItems(envList)
 	case err := <-errCh:
@@ -376,29 +379,19 @@ func getRTDataWidget(topic, uriString string) *qt.QWidget {
 			return
 		}
 		// Handles MQTT server connection
-		if clientInstance.MQTTClient == nil {
 			clientInstance.MQTTClient = utils.MQTTConnect(clientInstance.ID, uri)
-			defer clientInstance.MQTTClient.Disconnect(1000) // Waits for 1 second before disconnecting
 			startCh <- true
-		}
 		// Handles received data from subscribed topic
 		for {
 			select {
-			case receivedData := <-rtCh:
-				fmt.Printf("%v", receivedData)
-				/*
-				for id, sensor := range receivedData {
-					name := sensor.(map[string]interface{})["name"].(string)
-					measurement := sensor.(map[string]interface{})["measurement"].(float64)
-					dataList.AddItem(fmt.Sprintf("%s\t%s\t%f\n", id, name, measurement))
+			case receivedData, ok := <-rtCh:
+				if ok {
+					dataList.AddItem(fmt.Sprintf("%d\t%s\t%f\n", receivedData.(*client.Sensor).Code,
+						receivedData.(*client.Sensor).Name, receivedData.(*client.Sensor).Measurement))
 				}
-				 */
-				dataList.AddItem(fmt.Sprintf("%s\t%s\t%f\n", receivedData.(client.Sensor).Code,
-					receivedData.(client.Sensor).Name, receivedData.(client.Sensor).Measurement))
 			case <-quit:
 				return
 			}
-			time.Sleep(1 * time.Second)
 		}
 	}()
 	layout.AddWidget(dataList, 0, 0)
@@ -508,6 +501,115 @@ func getAddDevicesWidget() *qt.QWidget {
 		}
 	})
 	layout.AddWidget(doneBtn, 0, 0)
+
+	backBtn := qt.NewQPushButton2("Back", nil)
+	backBtn.ConnectClicked(func(checked bool) {
+		changeWindow(widget, getHomepageWidget())
+	})
+	layout.AddWidget(backBtn, 0, 0)
+
+	return widget
+
+}
+
+func getSendCommandWidget() *qt.QWidget {
+
+	layout := qt.NewQVBoxLayout()
+
+	var code string
+
+	widget := qt.NewQWidget(nil, 0)
+	widget.SetLayout(layout)
+
+	envListCB := qt.NewQComboBox(nil)
+	envListCB.SetEditable(false)
+
+	envNameCh := make(chan string)
+	errCh := make(chan string)
+
+	// Gets all environments from server and shows them in a combo box
+	go clientInstance.GetEnvList(envNameCh, errCh)
+
+	select {
+	case <- envNameCh:
+		envList := make([]string, 0)
+		for env := range envNameCh {
+			envList = append(envList, env)
+		}
+		envListCB.AddItems(envList)
+	case err := <-errCh:
+		qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+	}
+	layout.AddWidget(envListCB, 0, 0)
+
+	// Gets all devices from server and shows them in a combo box
+	devicesCB := qt.NewQComboBox(nil)
+	devicesCB.SetEditable(false)
+	devicesCB.SetVisible(false)
+	layout.AddWidget(devicesCB, 0, 0)
+
+	selEnvBtn := qt.NewQPushButton2("Select Environment", nil)
+	selEnvBtn.ConnectClicked(func(checked bool) {
+
+		client.SetCurrentEnv(currentEnv, envListCB.CurrentText())
+		resCh := make(chan string)
+		errCh = make(chan string)
+		go currentEnv.GetActuatorList(resCh, errCh)
+
+		select {
+		case <- resCh:
+			tmp := make([]string, 0)
+			for _, value := range currentEnv.ActuatorMap {
+				tmp = append(tmp, "Code: " + strconv.Itoa(value.Code) + " Name: " + value.Name)
+			}
+			fmt.Printf("TMP %v", tmp)
+			devicesCB.Clear()
+			devicesCB.AddItems(tmp)
+			devicesCB.SetVisible(true)
+
+		case err := <-errCh:
+			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		}
+
+	})
+	layout.AddWidget(selEnvBtn, 0, 0)
+
+	commandsCB := qt.NewQComboBox(nil)
+	commandsCB.SetEditable(false)
+	commandsCB.SetVisible(false)
+	layout.AddWidget(commandsCB, 0, 0)
+
+	selActBtn := qt.NewQPushButton2("Select Actuator", nil)
+	selActBtn.ConnectClicked(func(checked bool) {
+
+		// Extracts a number from the string
+		re := regexp.MustCompile("[0-9]+")
+		code = fmt.Sprintf(re.FindAllString(devicesCB.CurrentText(), -1)[0])
+
+		commands := currentEnv.ActuatorMap[code].Commands
+		commandsCB.Clear()
+		commandsCB.AddItems(commands)
+		commandsCB.SetVisible(true)
+
+	})
+	layout.AddWidget(selActBtn, 0, 0)
+
+	sendBtn := qt.NewQPushButton2("Send", nil)
+	sendBtn.ConnectClicked(func(checked bool) {
+
+		resCh := make(chan string)
+		errCh := make(chan string)
+		go currentEnv.SendCommand(code, commandsCB.CurrentText(), resCh, errCh)
+
+		select {
+		case res := <- resCh :
+			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		case err := <- errCh:
+			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		}
+
+	})
+	layout.AddWidget(sendBtn, 0, 0)
 
 	backBtn := qt.NewQPushButton2("Back", nil)
 	backBtn.ConnectClicked(func(checked bool) {

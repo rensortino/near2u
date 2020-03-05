@@ -56,7 +56,6 @@ func (e * Environment) GetSensorsList(resCh chan string, errCh chan string) {
 			0.0,
 		}
 		e.SensorMap[strconv.Itoa(tmpSensor.Code)] = *tmpSensor
-		fmt.Printf("\nSENSOR MAP: %v", e.SensorMap)
 	}
 
 	resCh <- "Success"
@@ -106,7 +105,6 @@ func (e * Environment) GetActuatorList(resCh chan string, errCh chan string) {
 			commands,
 		}
 		e.ActuatorMap[strconv.Itoa(tmpAct.Code)] = *tmpAct
-		fmt.Printf("\nSENSOR: %v", tmpAct)
 	}
 
 	resCh <- "Success"
@@ -125,7 +123,7 @@ func (e * Environment) AddSensor(code, name, kind string,
 
 	intCode, err := strconv.Atoi(code)
 	if err != nil {
-		errCh <- "Sensor Code must be integer"
+		errCh <- "Code must be integer"
 		close(errCh)
 		return
 	}
@@ -154,7 +152,7 @@ func (e * Environment) AddActuator(code, name, kind string, commands []string,
 
 	intCode, err := strconv.Atoi(code)
 	if err != nil {
-		errCh <- "Sensor Code must be integer"
+		errCh <- "Code must be integer"
 		close(errCh)
 		return
 	}

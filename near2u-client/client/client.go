@@ -4,7 +4,6 @@ import (
 	"../utils"
 	"encoding/json"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"log"
 )
 
 type Client struct {
@@ -51,7 +50,6 @@ func (c *Client) GetEnvList(envNameCh chan string, errCh chan string) {
 
 	envNameCh <- "start" // Used to enter the correct case in the select
 	for _ ,v := range res["data"].(map[string]interface{})["environments"].([]interface{}) {
-		log.Printf("in client %v", v)
 		envNameCh <- v.(string)
 	}
 	close(envNameCh)
@@ -62,13 +60,14 @@ func (c *Client) GetSensorData(topic string, rtCh chan interface{}, startCh chan
 	<- startCh
 	c.MQTTClient.Subscribe(topic, 0, func(client mqtt.Client, msg mqtt.Message) {
 		// Executes every time a message is published on the topic
-		sensor := Sensor{}
-		//env := Environment{SensorMap:sensors}
+		receivedData := struct {
+			Code int
+			Name string
+			Kind string
+			Measurement float64
+		} {}
 
-		json.Unmarshal(msg.Payload(), &sensor)
-
-		log.Println("Data Received")
-		log.Println(sensor)
+		json.Unmarshal(msg.Payload(), &receivedData)
 		/*
 			 Payload format:
 			{"ID":"env1","SensorMap":{
@@ -77,21 +76,34 @@ func (c *Client) GetSensorData(topic string, rtCh chan interface{}, startCh chan
 			}}
 		*/
 
-		rtCh <- &sensor
+		rtCh <- &Sensor{
+			Device{
+				receivedData.Code,
+				receivedData.Name,
+				receivedData.Kind,
+			},
+			receivedData.Measurement,
+		}
 	})
 }
 
 // Gracefully stops getting data from the broker
 func (c *Client) StopGettingData(topic string, rtCh chan interface{}, quit chan bool) {
 	c.MQTTClient.Unsubscribe(topic)
+	c.MQTTClient.Disconnect(1000) // Waits for 1 second before disconnecting
+
 	// Empties the channel before closing it
+	/*
 	select {
 	case <-rtCh:
+		fmt.Println("DEAD")
 		close(rtCh)
 	default:
 		close(rtCh)
 	}
+	 */
 	quit <- true
+	close(rtCh)
 	close(quit)
 }
 
