@@ -8,7 +8,7 @@
 #include "Ambiente.hpp"
 #include "User.hpp"
 #include <shared_mutex>
-#include "MQTTClient.h"
+#include "function_mqtt.hpp"
 
 
 class Controller
@@ -17,14 +17,17 @@ private:
 	std::list<User> users;
 	static Controller* instance;
 	std::shared_mutex User_mutex;
-
+	MQTTClient client;
+	MQTTClient_connectOptions conn_opts;
+	MQTTClient_message pubmsg;
+	MQTTClient_deliveryToken token;
 
 	User* Auth(std::string auth_token);
 	User * search_on_cache(std::string email,std::string password);
 
 
 public:
-	Controller();
+	void setUpMqtt();
 	std::list<User> * getUsers();
 	std::shared_mutex * getUser_mutex();
 	static Controller* getIstance();
@@ -37,6 +40,7 @@ public:
 	Json::Value Visualizza_Dispositivi(Json::Value data);
 	Json::Value Elimina_Dispositivi(Json::Value data);
 	Json::Value Invia_Comando(Json::Value data);
+	Json::Value Visualizza_Storico(Json::Value data);
 
 
 	

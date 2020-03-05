@@ -9,8 +9,6 @@
 int main(){
     auto tp =  Thread_Pool();
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    // faccio partire il broker mqtt
-    system("mosquitto -p 8082 &");
     // creo un thread che simula la pubblicazione dei vari sensori per ogni ambiente su MQTT
     std::thread th1(sensors_pubblish);
     

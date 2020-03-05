@@ -11,7 +11,8 @@
                         Visualizza_Ambienti,
                         Visualizza_Dispositivi,
                         Elimina_Dispositivi,
-                        Invia_Comando
+                        Invia_Comando,
+                        Visualizza_Storico
                         };
     static std::map<std::string, StringValue> s_mapStringValues;
 
@@ -71,6 +72,7 @@
         Json::Value requestjson;
         std::string response;
         Controller * controller = Controller::getIstance();
+        controller->setUpMqtt();
         reader.parse(request.second, requestjson);
         std::cout << "new request arrived requesting API: " + requestjson["function"].asString() <<std::endl;
         std::cout << s_mapStringValues[requestjson["function"].asString()] << std::endl;
@@ -104,6 +106,9 @@
             case Invia_Comando:
                 response = controller->Invia_Comando(requestjson).toStyledString();
                 break;
+            case Visualizza_Storico:
+                response = controller->Visualizza_Storico(requestjson).toStyledString();
+                break;
             default:
                 response = "{\"status\" : \"Service not avaible\"}"; 
                 break;
@@ -128,6 +133,7 @@
     s_mapStringValues["elimina_dispositivi"] = Elimina_Dispositivi;
     s_mapStringValues["visualizza_dispositivi"] = Visualizza_Dispositivi;
     s_mapStringValues["invia_comando"] = Invia_Comando;
+    s_mapStringValues["visualizza_storico"] = Visualizza_Storico;
     
     std::cout << "s_mapStringValues contains " 
         << s_mapStringValues.size() 

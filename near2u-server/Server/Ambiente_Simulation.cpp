@@ -7,7 +7,9 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
-#include "MQTTClient.h"
+#include "function_mqtt.hpp"
+#include <ctime>
+#include <time.h>
 
 #define ADDRESS     "tcp://localhost:8082"
 #define CLIENTID    "ambienti_simulation"
@@ -18,39 +20,6 @@
 
 // questa funzione serve a simulare la pubblicazione sul broker mqtt da parte dei dispositivi dei vari ambienti
 
-volatile MQTTClient_deliveryToken deliveredtoken;
-
-void delivered(void *context, MQTTClient_deliveryToken dt)
-{
-    printf("Message with token value %d delivery confirmed\n", dt);
-    deliveredtoken = dt;
-}
-
-int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *message)
-{
-    int i;
-    char* payloadptr;
-
-    printf("Message arrived\n");
-    printf("     topic: %s\n", topicName);
-    printf("   message: ");
-
-    payloadptr =(char*) message->payload;
-    for(i=0; i<message->payloadlen; i++)
-    {
-        putchar(*payloadptr++);
-    }
-    putchar('\n');
-    MQTTClient_freeMessage(&message);
-    MQTTClient_free(topicName);
-    return 1;
-}
-
-void connlost(void *context, char *cause)
-{
-    printf("\nConnection lost\n");
-    printf("     cause: %s\n", cause);
-}
 
 void sensors_pubblish(){
      std::this_thread::sleep_for (std::chrono::seconds(5));
@@ -107,8 +76,13 @@ void sensors_pubblish(){
                 std::list<Dispositivo *> * dispositivi = (*ambienti_itarator).getDispositivi(); 
                 for(dispositivi_iterator = dispositivi->begin();dispositivi_iterator != dispositivi->end(); dispositivi_iterator ++){
                     if((*dispositivi_iterator)->get_device_type() == device_type::sensore){
-                        std::string message = "{\"code\":" + std::to_string((*dispositivi_iterator)->getCodice()) + ",\"name\":\""+ (*dispositivi_iterator)->getNome() + "\",\"type\":\""+(*dispositivi_iterator)->getTipo() +" \",\"measurement\":"+std::to_string((float)rand()/(float)(RAND_MAX/15)) +" }";
-                        printf(message.c_str());
+                        std::time_t result = std::time(nullptr);
+                        time_t t = time(NULL);
+                        struct tm tm = *localtime(&t);
+
+                        printf("%d/%d/%d %d:%d",tm.tm_year,tm.tm_mon,tm.tm_mday,tm.tm_hour,tm.tm_sec);
+                        std::string message = "{\"code\":" + std::to_string((*dispositivi_iterator)->getCodice()) + ",\"name\":\""+ (*dispositivi_iterator)->getNome() + "\",\"type\":\""+(*dispositivi_iterator)->getTipo() +" \",\"measurement\":"+std::to_string((float)rand()/(float)(RAND_MAX/15)) +",\"time\": \""+ std::asctime(std::localtime(&result)) +"\" }";
+                        //printf(message.c_str());
                         pubmsg.payload = (void *)(message.c_str());
                         pubmsg.payloadlen = message.size();
                         pubmsg.qos = QOS;
