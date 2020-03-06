@@ -19,10 +19,10 @@
 
 
 // questa funzione serve a simulare la pubblicazione sul broker mqtt da parte dei dispositivi dei vari ambienti
-
+using namespace MQTT;
 
 void sensors_pubblish(){
-     std::this_thread::sleep_for (std::chrono::seconds(5));
+
 
     MQTTClient client;
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;

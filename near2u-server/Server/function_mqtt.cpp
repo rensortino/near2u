@@ -1,5 +1,6 @@
 #include "function_mqtt.hpp"
 
+namespace MQTT{
 void delivered(void *context,MQTTClient_deliveryToken token){
     printf("Message delivery confirmed\n");
 }
@@ -43,4 +44,51 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
     MQTTClient_freeMessage(&message);
     MQTTClient_free(topicName);
     return 1;
+}
+
+MQTTClient connect_publisher(std::string& address, std::string& ClientId){
+
+    MQTTClient client;
+    MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+    MQTTClient_message pubmsg = MQTTClient_message_initializer;
+    MQTTClient_deliveryToken token;
+    int rc;
+
+    MQTTClient_create(&client, address.c_str(), ClientId.c_str(),
+        MQTTCLIENT_PERSISTENCE_NONE, NULL);
+    conn_opts.keepAliveInterval = 20;
+    conn_opts.cleansession = 1;
+
+    if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS)
+    {
+        printf("Failed to connect, return code %d\n", rc);
+        return nullptr;
+    }
+    return client;
+
+}
+
+MQTTClient connect_subscriber(std::string& address, std::string& ClientId){
+
+    MQTTClient client;
+    MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+    MQTTClient_message pubmsg = MQTTClient_message_initializer;
+    MQTTClient_deliveryToken token;
+    int rc;
+
+    MQTTClient_create(&client, address.c_str(), ClientId.c_str(),
+        MQTTCLIENT_PERSISTENCE_NONE, NULL);
+    conn_opts.keepAliveInterval = 20;
+    conn_opts.cleansession = 1;
+
+    if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS)
+    {
+        printf("Failed to connect, return code %d\n", rc);
+        return nullptr;
+    }
+
+    MQTTClient_setCallbacks(client, NULL, connlost, msgarrvd, delivered);
+    return client;
+
+}
 }
