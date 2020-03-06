@@ -21,7 +21,7 @@ void sensors_pubblish(){
     std::string sensor_id("sensors_simulation");
     std::string actuator_id("actuators_simulation");
 
-    MQTTClient client = connect(address,sensor_id);
+    MQTTClient client = connect_publisher(address,sensor_id);
 
     MQTTClient client_attuatori = connect_subscriber(address,actuator_id,0);
     std::list<std::string> lista_topic_attuatori;

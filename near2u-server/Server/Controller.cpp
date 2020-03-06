@@ -21,7 +21,6 @@ using namespace MQTT;
 		
 		std::string address(getenv("MQTT_BROKER_ADDRESS"));
     	std::string server_id("Server");
-		MQTTClient client;
 		if(client == nullptr){
 			client = connect_subscriber(address,server_id,1);
 			

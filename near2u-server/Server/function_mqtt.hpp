@@ -19,7 +19,7 @@ namespace MQTT{
     void connlost(void *context, char *cause);
     int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *message);
 
-    MQTTClient connect(std::string& address, std::string& ClientId);
+    MQTTClient connect_publisher(std::string& address, std::string& ClientId);
     MQTTClient connect_subscriber(std::string& address, std::string& ClientId, int function);
     bool publish(std::string& topic, std::string& message, MQTTClient client );
     void subscribe(std::string& topic, MQTTClient client);
