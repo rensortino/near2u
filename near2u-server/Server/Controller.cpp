@@ -7,8 +7,10 @@
 #include "MYSQL.hpp"
 
 	
+#define ADDRESS     "tcp://localhost:8082"
+#define QOS         1
+#define TIMEOUT     10000L
 
-using namespace MQTT;
 
 	Controller* Controller::getIstance(){
 		if (!instance)
@@ -18,11 +20,25 @@ using namespace MQTT;
 	}
 
 	void Controller::setUpMqtt(){
-		
-		std::string address(getenv("MQTT_BROKER_ADDRESS"));
-    	std::string server_id("Server");
+		using namespace MQTT;
 		if(client == nullptr){
-			client = connect_subscriber(address,server_id,1);
+			conn_opts = MQTTClient_connectOptions_initializer;
+			pubmsg = MQTTClient_message_initializer;
+
+			MQTTClient_create(&client, ADDRESS, "Server_sensorData",
+			MQTTCLIENT_PERSISTENCE_NONE, NULL);
+			conn_opts.keepAliveInterval = 20;
+			conn_opts.cleansession = 1;
+
+			int rc;
+
+			if (( rc= MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS)
+			{
+				printf("Failed to connect, return code %d\n", rc);
+				exit(-1);
+			}
+
+			MQTTClient_setCallbacks(client, NULL, connlost, UploadDataSensor,delivered);
 			
 		}
 	}
@@ -123,8 +139,7 @@ using namespace MQTT;
 									}
 									user.addDispositivo(cod_ambiente,code_attuatore,nome_attuatore,tipo_attuatore,&comandi);
 							}
-							subscribe(cod_ambiente,client);
-							
+							MQTTClient_subscribe(client, cod_ambiente.c_str(), QOS);
 						}
 					}
 
@@ -223,7 +238,6 @@ using namespace MQTT;
 				response["error"] = "";
 				Controller::User_mutex.lock();
 				Current_User->addAmbiente(name,cod_ambiente);
-				subscribe(cod_ambiente,client);
 				Controller::User_mutex.unlock();
 		}
 			else {
@@ -472,12 +486,8 @@ using namespace MQTT;
 		std::string code_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
 		int code = data["data"]["code"].asInt();
 		std::string comando = data["data"]["command"].asString();
-		std::string server_id("Server");
-		std::string message = "{\"code\":" + std::to_string(code) + ",\"command\":\""+ comando + "\"}";
-       	std::cout << message << std::endl;
 
-		if(Current_User->inviaComando(code_ambiente,code,comando) && publish(server_id,message,client)){
-			
+		if(Current_User->inviaComando(code_ambiente,code,comando)){
 			response["status"] = "Succesfull";
 			response["error"] = "";
 			response["data"] = "command sent sucessfully";
