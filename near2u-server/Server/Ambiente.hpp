@@ -7,12 +7,8 @@
 
 #include "Sensore.h"
 #include "Attuatore.hpp"
-#include "MQTTClient.h"
+#include "function_mqtt.hpp"
 
-#define ADDRESS     "tcp://localhost:8082"
-#define CLIENTSERVER    "server"
-#define QOS         1
-#define TIMEOUT     10000L
 
 class Ambiente
 {
