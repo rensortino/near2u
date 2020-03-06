@@ -23,6 +23,12 @@ type Sensor struct {
 	Measurement float64 `json:"measurement"`
 }
 
+type Measurement struct {
+	Code int `json:"code"`
+	Value float64 `json:"misura"`
+	Timestamp string `json:"time"`
+}
+
 func NewDevice(code int, name, kind string) Device {
 
 	newDevice := Device {

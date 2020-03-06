@@ -23,7 +23,7 @@
 		using namespace MQTT;
 		if(client == nullptr){
 			conn_opts = MQTTClient_connectOptions_initializer;
-			pubmsg = MQTTClient_message_initializer;
+			
 
 			MQTTClient_create(&client, ADDRESS, "Server_sensorData",
 			MQTTCLIENT_PERSISTENCE_NONE, NULL);

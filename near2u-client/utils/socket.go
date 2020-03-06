@@ -1,7 +1,10 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net"
 	"strconv"
@@ -63,6 +66,7 @@ func socketSend(conn net.Conn, jsonReq []byte) {
 
 // TODO Handle messages bigger than buffer
 func socketReceive(conn net.Conn) []byte {
+	/*
 	buff := make([]byte, 8192) // Buffered reads from socket
 	for {
 		n, err := conn.Read(buff)
@@ -75,6 +79,13 @@ func socketReceive(conn net.Conn) []byte {
 		return buff[:n]
 	}
 	return []byte("EOF")
+	 */
+	var buf bytes.Buffer
+	responseSize, err := io.Copy(&buf, conn)
+	fmt.Println("total size:", responseSize)
+	errorCheck(err, "Error receiving data")
+	log.Printf("Receive: %v\n", buf.String())
+	return buf.Bytes()
 }
 
 // Accepts request parameters, returns JSON as map[string]interface{} on the channel
@@ -100,3 +111,4 @@ func SocketCommunicate(function, auth string, data interface{}) map[string]inter
 	}
 	return jsonRes
 }
+

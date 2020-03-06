@@ -95,6 +95,12 @@ func getHomepageWidget() *qt.QWidget {
 	})
 	layout.AddWidget(sendCmdBtn, 0, 0)
 
+	getHistoryBtn := qt.NewQPushButton2("Visualize History Data", nil)
+	getHistoryBtn.ConnectClicked(func(checked bool) {
+		changeWindow(widget, getHistoryDataWidget())
+	})
+	layout.AddWidget(getHistoryBtn, 0, 0)
+
 	return widget
 }
 
@@ -125,10 +131,10 @@ func getLoginWidget() *qt.QWidget {
 		res := <-responseMsg
 		if res == "User Authenticated" {
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+			changeWindow(widget, getHomepageWidget())
 		} else {
 			qt.QMessageBox_Information(nil, "Error", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
-		changeWindow(widget, getHomepageWidget())
 	})
 	layout.AddWidget(loginBtn, 0, 0)
 
@@ -364,6 +370,7 @@ func getRTDataWidget(topic, uriString string) *qt.QWidget {
 	widget.SetLayout(layout)
 
 	dataList := qt.NewQListWidget(nil)
+	dataList.AddItem(fmt.Sprintf("Code\tName\tMeasurement\n"))
 
 	rtCh := make(chan interface{}) // Channel for real time data
 	quit := make(chan bool)
@@ -699,6 +706,85 @@ func getDeleteSensorsWidget() *qt.QWidget {
 		}
 	})
 	layout.AddWidget(doneBtn, 0, 0)
+
+	backBtn := qt.NewQPushButton2("Back", nil)
+	backBtn.ConnectClicked(func(checked bool) {
+		changeWindow(widget, getHomepageWidget())
+	})
+	layout.AddWidget(backBtn, 0, 0)
+
+	return widget
+
+}
+
+func getHistoryDataWidget() *qt.QWidget {
+
+	layout := qt.NewQVBoxLayout()
+
+	widget := qt.NewQWidget(nil, 0)
+	widget.SetLayout(layout)
+
+	envListCB := qt.NewQComboBox(nil)
+	envListCB.SetEditable(false)
+
+	envNameCh := make(chan string)
+	errCh := make(chan string)
+
+	// Gets all environments from server and shows them in a combo box
+	go clientInstance.GetEnvList(envNameCh, errCh)
+
+	select {
+	case <- envNameCh:
+		envList := make([] string, 0)
+		for env := range envNameCh {
+			envList = append(envList, env)
+		}
+		envListCB.AddItems(envList)
+	case err := <-errCh:
+		qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+	}
+	layout.AddWidget(envListCB, 0, 0)
+
+	selEnvBtn := qt.NewQPushButton2("Select Environment", nil)
+	selEnvBtn.ConnectClicked(func(checked bool) {
+		client.SetCurrentEnv(currentEnv, envListCB.CurrentText())
+		resCh := make(chan [] * client.Measurement)
+		errCh := make(chan string) // Stores the error message, in case of failed request
+		go currentEnv.GetHistoryData(resCh, errCh)
+		select {
+		case history := <- resCh:
+			changeWindow(widget, getVisualizeHistoryWidget(history))
+		case error := <-errCh:
+			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		}
+	})
+	layout.AddWidget(selEnvBtn, 0, 0)
+
+	backBtn := qt.NewQPushButton2("Back", nil)
+	backBtn.ConnectClicked(func(checked bool) {
+		changeWindow(widget, getHomepageWidget())
+	})
+	layout.AddWidget(backBtn, 0, 0)
+
+	return widget
+
+}
+
+func getVisualizeHistoryWidget(history [] * client.Measurement) *qt.QWidget {
+
+	layout := qt.NewQVBoxLayout()
+
+	widget := qt.NewQWidget(nil, 0)
+	widget.SetLayout(layout)
+
+	dataList := qt.NewQListWidget(nil)
+	dataList.AddItem(fmt.Sprintf("Code\tValue\tTimestamp\n"))
+
+	for _, sensorDataRow := range history {
+		dataList.AddItem(fmt.Sprintf("%d\t%f\t%s\n", sensorDataRow.Code, sensorDataRow.Value, sensorDataRow.Timestamp))
+	}
+
+	layout.AddWidget(dataList, 0, 0)
 
 	backBtn := qt.NewQPushButton2("Back", nil)
 	backBtn.ConnectClicked(func(checked bool) {

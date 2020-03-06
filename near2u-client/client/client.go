@@ -65,16 +65,10 @@ func (c *Client) GetSensorData(topic string, rtCh chan interface{}, startCh chan
 			Name string
 			Kind string
 			Measurement float64
+			Timestamp string
 		} {}
 
-		json.Unmarshal(msg.Payload(), &receivedData)
-		/*
-			 Payload format:
-			{"ID":"env1","SensorMap":{
-				"sensor1":{"ID":"id","Name":"name","Measurement":7.4 },
-				"sensor2":{"ID":"otherID","Name":"name2","Measurement":4.76}
-			}}
-		*/
+		 json.Unmarshal(msg.Payload(), &receivedData)
 
 		rtCh <- &Sensor{
 			Device{
@@ -128,28 +122,7 @@ func (c *Client) GetTopicAndUri(envName string, topicCh, uriCh, errCh chan strin
 	close(topicCh)
 	close(uriCh)
 }
-/*
-func (c *Client) SelectEnv(envName string, envCh chan *Environment, errCh chan string) {
 
-	data := struct {
-		Name string `json:"name"`
-	}{
-		envName,
-	}
-
-	//Returns broker's address on rx channel
-	res := utils.SocketCommunicate("seleziona_ambiente", c.LoggedUser, data)
-
-	if res["status"] == "Failed" {
-		errCh <- res["error"].(string)
-		close(errCh)
-		return
-	}
-
-	envCh <- res["data"].(map[string]interface{})["environment"].(*Environment)
-	close(envCh)
-}
-*/
 func (c *Client) CreateEnv(envName string, currentEnv * Environment, resCh, errCh chan string) {
 
 	data := struct {

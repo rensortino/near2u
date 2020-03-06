@@ -3,6 +3,8 @@ package client
 import (
 	"../utils"
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 )
 
@@ -275,5 +277,49 @@ func (e * Environment) SendCommand(code, command string, resCh, errCh chan strin
 		return
 	} else {
 		errCh <- "Error sending commands"
+	}
+}
+
+func (e * Environment) GetHistoryData(resCh chan [] * Measurement, errCh chan string)  {
+
+	data := struct {
+		EnvName string `json:"envname"`
+	} {
+		e.Name,
+	}
+
+	res := utils.SocketCommunicate("visualizza_storico", clientInstance.LoggedUser, data)
+
+
+	if res["status"] == "Succesfull" {
+		historyFile, err := os.Create("history.csv")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer historyFile.Close()
+		historyFile.WriteString(fmt.Sprintf("Code,Value,Timestamp\n"))
+		sensorData := res["data"].(map[string]interface{})["sensor_data"].([]interface{})
+		history := make([] * Measurement, 0)
+
+		for _, data := range sensorData {
+
+			d := data.(map[string]interface{})
+
+			measurement := &Measurement{
+				int(d["code"].(float64)),
+				d["misura"].(float64),
+				d["time"].(string),
+			}
+			history = append(history, measurement)
+			historyFile.WriteString(fmt.Sprintf("%d,%f,%s", measurement.Code, measurement.Value, measurement.Timestamp))
+		}
+
+		resCh <- history
+		close(resCh)
+		return
+	} else {
+		errCh <- res["error"].(string)
+		close(errCh)
+		return
 	}
 }
