@@ -12,7 +12,9 @@
                         Visualizza_Dispositivi,
                         Elimina_Dispositivi,
                         Invia_Comando,
-                        Visualizza_Storico
+                        Visualizza_Storico,
+                        Elimina_Ambiente,
+                        Logout
                         };
     static std::map<std::string, StringValue> s_mapStringValues;
 
@@ -109,6 +111,12 @@
             case Visualizza_Storico:
                 response = controller->Visualizza_Storico(requestjson).toStyledString();
                 break;
+            case Elimina_Ambiente:
+                response = controller->Elimina_Ambiente(requestjson).toStyledString();
+                break;
+            case Logout:
+                response = controller->Logout(requestjson).toStyledString();
+                break;
             default:
                 response = "{\"status\" : \"Service not avaible\"}"; 
                 break;
@@ -134,6 +142,8 @@
     s_mapStringValues["visualizza_dispositivi"] = Visualizza_Dispositivi;
     s_mapStringValues["invia_comando"] = Invia_Comando;
     s_mapStringValues["visualizza_storico"] = Visualizza_Storico;
+    s_mapStringValues["elimina_ambiente"] = Elimina_Ambiente;
+    s_mapStringValues["logout"] = Logout;
     
     std::cout << "s_mapStringValues contains " 
         << s_mapStringValues.size() 

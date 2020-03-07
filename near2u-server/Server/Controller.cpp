@@ -44,7 +44,7 @@
 	}
 	Controller *Controller::instance = 0;
 
-	std::list<User> * Controller::getUsers(){
+	std::list<User *> * Controller::getUsers(){
 		return &users;
 	}
 	std::shared_mutex * Controller::getUser_mutex(){
@@ -52,12 +52,12 @@
 	}
 	
 	User * Controller::search_on_cache(std::string email,std::string password){
-		std::list<User>::iterator cache_user;
+		std::list<User *>::iterator cache_user;
 		User_mutex.lock_shared();
 			for (cache_user = users.begin(); cache_user != users.end(); ++cache_user){
-				if((cache_user->getemail().compare(email) == 0) && (cache_user->getPassword().compare(password) == 0) ){
+				if(((*cache_user)->getemail().compare(email) == 0) && ((*cache_user)->getPassword().compare(password) == 0) ){
 					User_mutex.unlock_shared();
-					return  &(*cache_user);
+					return  (*cache_user);
 				}
 			}
 				User_mutex.unlock_shared();
@@ -107,22 +107,22 @@
 				while (res->next()) {
 					std::cout << "auth_token = '" << res->getString("auth_token") << "'" << std::endl;
 					response["data"]["auth"] = (std::string) res->getString("auth_token");
-					User user((std::string) res->getString("name"),(std::string) res->getString("surname"),(std::string) res->getString("email"),(std::string) res->getString("auth_token"),(std::string) res->getString("password"));
-					user.setAdmin(true);// to give admin privilege
-					std::string query = "select Ambiente.cod_ambiente, Ambiente.name from (Ambiente join Ambiente_User on Ambiente.cod_ambiente = Ambiente_User.cod_ambiente) where User_email = '"+ user.getemail()+"'; ";
+					User * user = new User((std::string) res->getString("name"),(std::string) res->getString("surname"),(std::string) res->getString("email"),(std::string) res->getString("auth_token"),(std::string) res->getString("password"));
+					user->setAdmin(true);// to give admin privilege
+					std::string query = "select Ambiente.cod_ambiente, Ambiente.name from (Ambiente join Ambiente_User on Ambiente.cod_ambiente = Ambiente_User.cod_ambiente) where User_email = '"+ user->getemail()+"'; ";
 					sql::ResultSet *ambienti_db = MYSQL::Select_Query(query);
 					if(ambienti_db ->rowsCount() > 0){
 						while(ambienti_db->next()){
 							std::string name_ambiente = ambienti_db->getString("name");
 							std::string cod_ambiente = ambienti_db->getString("cod_ambiente");
-							user.addAmbiente(name_ambiente,cod_ambiente);
+							user->addAmbiente(name_ambiente,cod_ambiente);
 							query = "select Dispositivo.name, Dispositivo.type, Dispositivo.code from ((Dispositivo join Sensore on Sensore.code = Dispositivo.code) join Dispositivo_Ambiente on Dispositivo.code = Dispositivo_Ambiente.code) where Dispositivo_Ambiente.cod_ambiente = '"+ cod_ambiente +"';";
 							sql::ResultSet *sensori_db = MYSQL::Select_Query(query);
 							while(sensori_db->next()){
 								std::string nome_sensore=sensori_db->getString("name");
 								std::string tipo_sensore= sensori_db ->getString("type");
 								int code_sensore= sensori_db->getInt("code");
-								user.addDispositivo(cod_ambiente,code_sensore,nome_sensore,tipo_sensore,nullptr);
+								user->addDispositivo(cod_ambiente,code_sensore,nome_sensore,tipo_sensore,nullptr);
 							}
 							query = "select Dispositivo.name, Dispositivo.type, Dispositivo.code from ((Dispositivo join Attuatore on Attuatore.code = Dispositivo.code) join Dispositivo_Ambiente on Dispositivo.code = Dispositivo_Ambiente.code) where Dispositivo_Ambiente.cod_ambiente = '"+ cod_ambiente +"';";
 							sql::ResultSet *attuatori_db = MYSQL::Select_Query(query);
@@ -137,7 +137,7 @@
 										std::string comando=comandi_db->getString("comando");
 										comandi.push_back(comando);
 									}
-									user.addDispositivo(cod_ambiente,code_attuatore,nome_attuatore,tipo_attuatore,&comandi);
+									user->addDispositivo(cod_ambiente,code_attuatore,nome_attuatore,tipo_attuatore,&comandi);
 							}
 							MQTTClient_subscribe(client, cod_ambiente.c_str(), QOS);
 						}
@@ -161,12 +161,12 @@
 	}
 
 	User* Controller::Auth(std::string auth_token){
-		std::list<User>::iterator cache_user;
+		std::list<User *>::iterator cache_user;
 		User_mutex.lock_shared();
 		for (cache_user = users.begin(); cache_user != users.end(); ++cache_user){
-    		if(cache_user->getauth_token().compare(auth_token) == 0){
+    		if((*cache_user)->getauth_token().compare(auth_token) == 0){
 				User_mutex.unlock_shared();
-				return  &(*cache_user);
+				return  (*cache_user);
 			}
 		}
 		User_mutex.unlock_shared();
@@ -319,6 +319,7 @@
 			response["status"] = "Succesfull";
 			response["error"] = "";
 			response["data"] = "insert completed";
+			std::cout << Current_User->getAmbiente(cod_ambiente)->getDispositivi()->size() << std::endl;
 
 		}
 			
@@ -338,7 +339,7 @@
 			response["data"] = "";
 			return response;
 		}
-		std::list<Ambiente> * ambienti = Current_User->getAmbienti(); 
+		std::list<Ambiente *> * ambienti = Current_User->getAmbienti(); 
 		if(ambienti->empty()){
 			response["status"] = "Failed";
 			response["error"] = "User does not have Ambiente associated";
@@ -346,12 +347,12 @@
 			return response;
 		}
 
-		std::list<Ambiente>::iterator ambienti_iterator;
+		std::list<Ambiente *>::iterator ambienti_iterator;
 			
 		int i = 0;
 		for(ambienti_iterator = ambienti->begin();ambienti_iterator != ambienti->end();ambienti_iterator ++) {	
 				
-			response["data"]["environments"][i] = (*ambienti_iterator).getNome();
+			response["data"]["environments"][i] = (*ambienti_iterator)->getNome();
 			i++;
     	}
         response["status"] = "Succesfull";
@@ -541,6 +542,53 @@
 
 		}
 	}
+	Json::Value Controller::Elimina_Ambiente(Json::Value data){
+		Json::Value response;
+		User * Current_User = Controller::Auth(data["auth"].asString());
+		
+		if(Current_User == nullptr){
+			response["status"] = "Failed";
+			response["error"] = "Unauthorized";
+			response["data"] = "";
+			return response;
+		}
 
+		std::string code_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
+		if(Current_User->eliminaAmbiente(code_ambiente)){
+			response["status"] = "Succesfull";
+			response["error"] = "";
+			response["data"] = "Ambiente "+ data["data"]["envname"].asString() +" deleted";
+		}
+		else {
+			response["status"] = "Failed";
+			response["error"] = "Ambiente "+ data["data"]["envname"].asString() +" not found";
+			response["data"] = "";
+		}
+
+		return response;
+
+
+	}
+
+	Json::Value Controller::Logout(Json::Value data){
+		Json::Value response;
+		User * Current_User = Controller::Auth(data["auth"].asString());
+		
+		if(Current_User == nullptr){
+			response["status"] = "Failed";
+			response["error"] = "No User Found";
+			response["data"] = "";
+			return response;
+		}
+
+		delete Current_User;
+		users.remove(Current_User);
+
+		response["status"] = "Succesfull";
+		response["error"] = "";
+		response["data"] = "Logout";
+		return response;
+
+	}
 	
 

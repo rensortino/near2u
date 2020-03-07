@@ -64,16 +64,16 @@ void sensors_pubblish(){
     while(true){
         std::this_thread::sleep_for (std::chrono::seconds(5));
         std::cout<< "checking for sensors" << std::endl;
-        std::list<User>::iterator users_iterator;
+        std::list<User *>::iterator users_iterator;
 
         controller->getUser_mutex()->lock_shared();
         for(users_iterator = controller->getUsers()->begin(); users_iterator != controller->getUsers()->end(); users_iterator ++ ){
-            std::list<Ambiente>::iterator ambienti_itarator;
-            std::list<Ambiente> * ambienti = (*users_iterator).getAmbienti(); 
+            std::list<Ambiente *>::iterator ambienti_itarator;
+            std::list<Ambiente *> * ambienti = (*users_iterator)->getAmbienti(); 
             for(ambienti_itarator = ambienti->begin(); ambienti_itarator != ambienti->end(); ambienti_itarator ++){
-                std::string topic = (*ambienti_itarator).getcodAmbiente();
+                std::string topic = (*ambienti_itarator)->getcodAmbiente();
                 std::list<Dispositivo *>::iterator dispositivi_iterator;
-                std::list<Dispositivo *> * dispositivi = (*ambienti_itarator).getDispositivi(); 
+                std::list<Dispositivo *> * dispositivi = (*ambienti_itarator)->getDispositivi(); 
                 for(dispositivi_iterator = dispositivi->begin();dispositivi_iterator != dispositivi->end(); dispositivi_iterator ++){
                     if((*dispositivi_iterator)->get_device_type() == device_type::sensore){
                         std::time_t result = std::time(nullptr);
@@ -92,7 +92,7 @@ void sensors_pubblish(){
                         printf("Message with delivery token %d delivered\n", token);
                     }
                     else if((*dispositivi_iterator)->get_device_type() == device_type::attuatore){
-                       std::string topic_attuatore = (*ambienti_itarator).getcodAmbiente() + std::to_string((*dispositivi_iterator)->getCodice()); 
+                       std::string topic_attuatore = (*ambienti_itarator)->getcodAmbiente() + std::to_string((*dispositivi_iterator)->getCodice()); 
                        if(lista_topic_attuatori.empty()){
                            std::cout << "attuatore: " + std::to_string((*dispositivi_iterator)->getCodice()) + "subscribing to: " + topic_attuatore   << std::endl;
                             MQTTClient_subscribe(client_attuatori, topic_attuatore.c_str(), QOS);

@@ -42,10 +42,12 @@
     void Ambiente::addDispositivo(int code, std::string& nome, std::string& tipo, std::list<std::string> * commands){
 
         if(commands != nullptr){
+            std::cout << "inserisco attuatore" << std::endl;
             Attuatore *  dispositivo = new Attuatore(code,nome,tipo,commands);
             dispositivi.push_back(dispositivo);
         }
         else {
+            std::cout << "inserisco sensore" << std::endl;
             Sensore *  dispositivo = new Sensore(code,nome,tipo);
             dispositivi.push_back(dispositivo);
         }
@@ -117,6 +119,14 @@
         
 
 
+    }
+
+    Ambiente::~Ambiente(){
+        std::list<Dispositivo *>::iterator dispositivi_iterator;
+        for(dispositivi_iterator = dispositivi.begin(); dispositivi_iterator != dispositivi.end(); dispositivi_iterator ++){
+            delete (*dispositivi_iterator);
+        }
+        dispositivi.~list();
     }
 
 

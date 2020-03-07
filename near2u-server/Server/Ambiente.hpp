@@ -18,6 +18,7 @@ class Ambiente
 {
 	public:
 	Ambiente( std::string& name, std::string& cod);
+	~Ambiente();
 	std::string& getNome();
 	std::string& getcodAmbiente();
 	std::list<Dispositivo *> *  getDispositivi();

@@ -25,15 +25,15 @@
     std::string& User::getauth_token(){
         return auth_token;
     }
-    std::list<Ambiente> * User::getAmbienti(){
+    std::list<Ambiente *> * User::getAmbienti(){
         return &ambienti;
     }
     Ambiente * User::getAmbiente(std::string& cod_Ambiente){
-        std::list<Ambiente>::iterator ambienti_iterator;
+        std::list<Ambiente *>::iterator ambienti_iterator;
 
         for(ambienti_iterator=ambienti.begin(); ambienti_iterator != ambienti.end(); ambienti_iterator ++){
-            if((*ambienti_iterator).getcodAmbiente().compare(cod_Ambiente) == 0){
-                return &(*ambienti_iterator);
+            if((*ambienti_iterator)->getcodAmbiente().compare(cod_Ambiente) == 0){
+                return (*ambienti_iterator);
             }
         }
         return nullptr;
@@ -47,7 +47,7 @@
     }
 
     void User::addAmbiente(std::string& nome, std::string& codice ){
-        Ambiente ambiente(nome,codice);
+        Ambiente * ambiente = new Ambiente(nome,codice);
         ambienti.push_back(ambiente);
     }
     
@@ -83,6 +83,25 @@
         }
         return true;
 
+    }
+
+    bool User::eliminaAmbiente(std::string& cod_ambiente){
+        Ambiente * ambiente = getAmbiente(cod_ambiente);
+        if(ambiente == nullptr){
+            return false;
+        }
+        ambienti.remove(ambiente);
+        delete ambiente;
+        return true;
+
+    }
+
+    User::~User(){
+        std::list<Ambiente *>::iterator ambiente_iterator;
+        for(ambiente_iterator = ambienti.begin(); ambiente_iterator != ambienti.end(); ambiente_iterator ++){
+            delete (*ambiente_iterator);
+        }
+        ambienti.~list();
     }
     
 

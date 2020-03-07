@@ -10,7 +10,7 @@ int main(){
     auto tp =  Thread_Pool();
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     // creo un thread che simula la pubblicazione dei vari sensori per ogni ambiente su MQTT
-    std::thread th1(sensors_pubblish);
+    //std::thread th1(sensors_pubblish);
     
   if (sockfd == 0) {
     std::cout << "Failed to create socket. errno: " << errno << std::endl;
@@ -51,7 +51,7 @@ int main(){
 
   
   tp.~Thread_Pool();
-  th1.join();
+  //th1.join();
   close(sockfd);
   exit(0);
 
