@@ -12,7 +12,7 @@ func Login(responseMsg, token chan string, email, password string) {
 
 	res := SocketCommunicate("login", "", data)
 
-	if res["status"] == "Succesfull" {
+	if res["status"] == "Successful" {
 		// Accesses nested json
 		token <- res["data"].(map[string]interface{})["auth"].(string)
 		responseMsg <- "User Authenticated"
@@ -21,6 +21,18 @@ func Login(responseMsg, token chan string, email, password string) {
 		responseMsg <- res["error"].(string)
 	}
 
+}
+
+func Logout(loggedUser string, resCh, errCh chan string) {
+
+	res := SocketCommunicate("logout", loggedUser, nil)
+
+	if res["status"] == "Successful" {
+		// Accesses nested json
+		resCh <- "User Authenticated"
+	} else {
+		errCh <- res["error"].(string)
+	}
 }
 
 func Register(responseMsg chan string, name, surname, email, password string) {
@@ -39,7 +51,7 @@ func Register(responseMsg chan string, name, surname, email, password string) {
 
 	res := SocketCommunicate("register", "", newUser)
 
-	if res["status"] == "Succesfull" {
+	if res["status"] == "Successful" {
 		responseMsg <- "User Registered"
 	} else {
 		responseMsg <- res["error"].(string)

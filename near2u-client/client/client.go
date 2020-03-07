@@ -3,7 +3,7 @@ package client
 import (
 	"../utils"
 	"encoding/json"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+ 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 type Client struct {
@@ -20,7 +20,7 @@ func GetClientInstance() *Client {
 	if clientInstance == nil {
 		clientInstance = &Client{
 			"ID1",
-			"",
+			"NULL",
 			nil,
 		}
 	}
@@ -28,8 +28,13 @@ func GetClientInstance() *Client {
 	return clientInstance
 }
 
+func NewEnvironment() * Environment{
+	return &Environment{}
+}
+
 // Used when configuring an environment, to indicate which one to work with
 func SetCurrentEnv(currentEnv * Environment, name string) {
+
 	if currentEnv.Name != name {
 		currentEnv.Name = name
 		currentEnv.SensorMap = make(map[string]Sensor) // Initialize the map to populate it with the devices
@@ -133,8 +138,31 @@ func (c *Client) CreateEnv(envName string, currentEnv * Environment, resCh, errC
 
 	res := utils.SocketCommunicate("crea_ambiente", c.LoggedUser, data)
 
-	if res["status"] == "Succesfull" {
+	if res["status"] == "Successful" {
 		SetCurrentEnv(currentEnv, envName)
+		resCh <- res["status"].(string)
+		return
+	} else {
+		errCh <- res["error"].(string)
+		close(errCh)
+		return
+	}
+}
+
+func (c *Client) DeleteEnv(envName string, currentEnv * Environment, resCh, errCh chan string) {
+
+	data := struct {
+		Name string `json:"name"`
+	}{
+		envName,
+	}
+
+	res := utils.SocketCommunicate("elimina_ambiente", c.LoggedUser, data)
+
+	if res["status"] == "Successful" {
+		if currentEnv.Name == envName {
+			currentEnv = NewEnvironment()
+		}
 		resCh <- res["status"].(string)
 		return
 	} else {

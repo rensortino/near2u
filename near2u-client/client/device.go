@@ -82,6 +82,7 @@ func (s * Sensor) Append(deviceList []interface{}) ([]interface{}, bool) {
 		}
 	}
 
+
 	return append(deviceList, sensor), true
 }
 
@@ -130,7 +131,7 @@ func (a * Actuator) SendCommand(envName, command string) string {
 			}
 			res := utils.SocketCommunicate("invia_comando", clientInstance.LoggedUser, data)
 
-			if res["status"] == "Succesfull" {
+			if res["status"] == "Successful" {
 				return res["data"].(string)
 			}
 		}

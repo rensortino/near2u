@@ -29,7 +29,7 @@ func initWindow() {
 
 	mainWindow = qt.NewQMainWindow(nil, 0)
 	mainWindow.SetWindowTitle("Near2U")
-	mainWindow.SetMinimumSize2(400, 400)
+	mainWindow.SetMinimumSize2(800, 600)
 
 	mainWidget = getStartWidget()
 
@@ -79,7 +79,7 @@ func getHomepageWidget() *qt.QWidget {
 
 	newEnvBtn := qt.NewQPushButton2("Create Environment", nil)
 	newEnvBtn.ConnectClicked(func(checked bool) {
-		changeWindow(widget, getNewEnvWidget())
+		changeWindow(widget, getAddDelEnvWidget())
 	})
 	layout.AddWidget(newEnvBtn, 0, 0)
 
@@ -101,6 +101,24 @@ func getHomepageWidget() *qt.QWidget {
 	})
 	layout.AddWidget(getHistoryBtn, 0, 0)
 
+	logoutBtn := qt.NewQPushButton2("Log Out", nil)
+	logoutBtn.ConnectClicked(func(checked bool) {
+		resCh := make(chan string)
+		errCh := make(chan string)
+		utils.Logout(clientInstance.LoggedUser, resCh, errCh)
+		select {
+		case res := <- resCh:
+			clientInstance.LoggedUser = "NULL"
+			currentEnv = client.NewEnvironment()
+			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+			changeWindow(widget, getStartWidget())
+		case err := <- errCh:
+			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		}
+
+	})
+	layout.AddWidget(logoutBtn, 0, 0)
+
 	return widget
 }
 
@@ -121,8 +139,6 @@ func getLoginWidget() *qt.QWidget {
 
 	loginBtn := qt.NewQPushButton2("Log In", nil)
 	loginBtn.ConnectClicked(func(checked bool) {
-
-		fmt.Printf("sfgsfgdfgd %v", email.Text())
 
 		responseMsg := make(chan string)
 		token := make(chan string)
@@ -213,22 +229,7 @@ func getSelectEnvForMQTTWidget() *qt.QWidget {
 	envListCB := qt.NewQComboBox(nil)
 	envListCB.SetEditable(false)
 
-	envNameCh := make(chan string)
-	errCh := make(chan string)
-
-	// Gets all environments from server and shows them in a combo box
-	go clientInstance.GetEnvList(envNameCh, errCh)
-
-	select {
-	case <- envNameCh:
-		envList := make([] string, 0)
-		for env := range envNameCh {
-			envList = append(envList, env)
-		}
-		envListCB.AddItems(envList)
-	case err := <-errCh:
-		qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-	}
+	getEnvList(envListCB)
 	layout.AddWidget(envListCB, 0, 0)
 
 	selEnvBtn := qt.NewQPushButton2("Select Environment", nil)
@@ -267,27 +268,13 @@ func getConfigureEnvWidget() *qt.QWidget {
 	envListCB := qt.NewQComboBox(nil)
 	envListCB.SetEditable(false)
 
-	envNameCh := make(chan string)
-	errCh := make(chan string)
-
-	// Gets all environments from server and shows them in a combo box
-	go clientInstance.GetEnvList(envNameCh, errCh)
-
-	select {
-	case <- envNameCh:
-		envList := make([]string, 0)
-		for env := range envNameCh {
-			envList = append(envList, env)
-		}
-		envListCB.AddItems(envList)
-	case err := <-errCh:
-		qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-	}
+	getEnvList(envListCB)
 	layout.AddWidget(envListCB, 0, 0)
 
 	addBtn := qt.NewQPushButton2("Add Devices", nil)
 	addBtn.ConnectClicked(func(checked bool) {
 		client.SetCurrentEnv(currentEnv, envListCB.CurrentText())
+		fmt.Printf("\nCURRENTENV: %v", currentEnv)
 		resCh := make(chan string)
 		errCh := make(chan string)
 		go currentEnv.GetDevicesList(resCh, errCh)
@@ -327,7 +314,7 @@ func getConfigureEnvWidget() *qt.QWidget {
 
 }
 
-func getNewEnvWidget() *qt.QWidget {
+func getAddDelEnvWidget() *qt.QWidget {
 
 	layout := qt.NewQVBoxLayout()
 
@@ -351,6 +338,21 @@ func getNewEnvWidget() *qt.QWidget {
 		}
 	})
 	layout.AddWidget(newEnvBtn, 0, 0)
+
+	delEnvBtn := qt.NewQPushButton2("Delete Environment", nil)
+	delEnvBtn.ConnectClicked(func(checked bool) {
+		resCh := make(chan string) // Stores the environment returned from the server
+		errCh := make(chan string)              // Stores the error message, in case of failed request
+		go clientInstance.DeleteEnv(envName.Text(), currentEnv, resCh, errCh)
+		select {
+		case res := <- resCh:
+			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+			changeWindow(widget, getHomepageWidget())
+		case error := <-errCh:
+			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		}
+	})
+	layout.AddWidget(delEnvBtn, 0, 0)
 
 	backBtn := qt.NewQPushButton2("Back", nil)
 	backBtn.ConnectClicked(func(checked bool) {
@@ -420,6 +422,12 @@ func getAddDevicesWidget() *qt.QWidget {
 
 	widget := qt.NewQWidget(nil, 0)
 	widget.SetLayout(layout)
+
+	devicesCB := qt.NewQComboBox(nil)
+	devicesCB.SetEditable(false)
+
+	getDeviceList(devicesCB)
+	layout.AddWidget(devicesCB, 0, 0)
 
 	code := qt.NewQLineEdit(nil)
 	code.SetPlaceholderText("Code")
@@ -530,37 +538,23 @@ func getSendCommandWidget() *qt.QWidget {
 
 	envListCB := qt.NewQComboBox(nil)
 	envListCB.SetEditable(false)
+	selEnvBtn := qt.NewQPushButton2("Select Environment", nil)
 
-	envNameCh := make(chan string)
-	errCh := make(chan string)
-
-	// Gets all environments from server and shows them in a combo box
-	go clientInstance.GetEnvList(envNameCh, errCh)
-
-	select {
-	case <- envNameCh:
-		envList := make([]string, 0)
-		for env := range envNameCh {
-			envList = append(envList, env)
-		}
-		envListCB.AddItems(envList)
-	case err := <-errCh:
-		qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-	}
-	layout.AddWidget(envListCB, 0, 0)
+	getEnvList(envListCB)
 
 	// Gets all devices from server and shows them in a combo box
 	devicesCB := qt.NewQComboBox(nil)
 	devicesCB.SetEditable(false)
 	devicesCB.SetVisible(false)
-	layout.AddWidget(devicesCB, 0, 0)
 
-	selEnvBtn := qt.NewQPushButton2("Select Environment", nil)
+	selActBtn := qt.NewQPushButton2("Select Actuator", nil)
+	selActBtn.SetVisible(false)
+
 	selEnvBtn.ConnectClicked(func(checked bool) {
 
 		client.SetCurrentEnv(currentEnv, envListCB.CurrentText())
 		resCh := make(chan string)
-		errCh = make(chan string)
+		errCh := make(chan string)
 		go currentEnv.GetActuatorList(resCh, errCh)
 
 		select {
@@ -573,20 +567,20 @@ func getSendCommandWidget() *qt.QWidget {
 			devicesCB.Clear()
 			devicesCB.AddItems(tmp)
 			devicesCB.SetVisible(true)
+			selActBtn.SetVisible(true)
 
 		case err := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
 
 	})
-	layout.AddWidget(selEnvBtn, 0, 0)
 
 	commandsCB := qt.NewQComboBox(nil)
 	commandsCB.SetEditable(false)
 	commandsCB.SetVisible(false)
-	layout.AddWidget(commandsCB, 0, 0)
+	sendBtn := qt.NewQPushButton2("Send", nil)
+	sendBtn.SetVisible(false)
 
-	selActBtn := qt.NewQPushButton2("Select Actuator", nil)
 	selActBtn.ConnectClicked(func(checked bool) {
 
 		// Extracts a number from the string
@@ -597,11 +591,9 @@ func getSendCommandWidget() *qt.QWidget {
 		commandsCB.Clear()
 		commandsCB.AddItems(commands)
 		commandsCB.SetVisible(true)
+		sendBtn.SetVisible(true)
 
 	})
-	layout.AddWidget(selActBtn, 0, 0)
-
-	sendBtn := qt.NewQPushButton2("Send", nil)
 	sendBtn.ConnectClicked(func(checked bool) {
 
 		resCh := make(chan string)
@@ -614,30 +606,26 @@ func getSendCommandWidget() *qt.QWidget {
 		case err := <- errCh:
 			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
-
 	})
-	layout.AddWidget(sendBtn, 0, 0)
 
 	backBtn := qt.NewQPushButton2("Back", nil)
 	backBtn.ConnectClicked(func(checked bool) {
 		changeWindow(widget, getHomepageWidget())
 	})
+
+	layout.AddWidget(envListCB, 0, 0)
+	layout.AddWidget(selEnvBtn, 0, 0)
+	layout.AddWidget(devicesCB, 0, 0)
+	layout.AddWidget(selActBtn, 0, 0)
+	layout.AddWidget(commandsCB, 0, 0)
+	layout.AddWidget(sendBtn, 0, 0)
 	layout.AddWidget(backBtn, 0, 0)
 
 	return widget
 
 }
 
-func getDeleteSensorsWidget() *qt.QWidget {
-
-	layout := qt.NewQVBoxLayout()
-
-	widget := qt.NewQWidget(nil, 0)
-	widget.SetLayout(layout)
-
-	devicesCB := qt.NewQComboBox(nil)
-	devicesCB.SetEditable(false)
-
+func getDeviceList(devicesCB * qt.QComboBox) {
 	resCh := make(chan string)
 	errCh := make(chan string)
 
@@ -658,6 +646,19 @@ func getDeleteSensorsWidget() *qt.QWidget {
 	case error := <-errCh:
 		qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 	}
+}
+
+func getDeleteSensorsWidget() *qt.QWidget {
+
+	layout := qt.NewQVBoxLayout()
+
+	widget := qt.NewQWidget(nil, 0)
+	widget.SetLayout(layout)
+
+	devicesCB := qt.NewQComboBox(nil)
+	devicesCB.SetEditable(false)
+
+	getDeviceList(devicesCB)
 	layout.AddWidget(devicesCB, 0, 0)
 
 	code := qt.NewQLineEdit(nil)
@@ -717,16 +718,7 @@ func getDeleteSensorsWidget() *qt.QWidget {
 
 }
 
-func getHistoryDataWidget() *qt.QWidget {
-
-	layout := qt.NewQVBoxLayout()
-
-	widget := qt.NewQWidget(nil, 0)
-	widget.SetLayout(layout)
-
-	envListCB := qt.NewQComboBox(nil)
-	envListCB.SetEditable(false)
-
+func getEnvList(envListCB *qt.QComboBox) {
 	envNameCh := make(chan string)
 	errCh := make(chan string)
 
@@ -743,6 +735,19 @@ func getHistoryDataWidget() *qt.QWidget {
 	case err := <-errCh:
 		qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 	}
+}
+
+func getHistoryDataWidget() *qt.QWidget {
+
+	layout := qt.NewQVBoxLayout()
+
+	widget := qt.NewQWidget(nil, 0)
+	widget.SetLayout(layout)
+
+	envListCB := qt.NewQComboBox(nil)
+	envListCB.SetEditable(false)
+
+	getEnvList(envListCB)
 	layout.AddWidget(envListCB, 0, 0)
 
 	selEnvBtn := qt.NewQPushButton2("Select Environment", nil)
@@ -798,7 +803,7 @@ func getVisualizeHistoryWidget(history [] * client.Measurement) *qt.QWidget {
 
 func main() {
 
-	currentEnv = &client.Environment{}
+	currentEnv = client.NewEnvironment()
 	clientInstance = client.GetClientInstance()
 	initWindow()
 	qt.QApplication_Exec()

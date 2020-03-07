@@ -245,7 +245,7 @@ func (e * Environment) Done(operation string, resCh, errCh chan string) {
 
 	deviceList = make([]interface{}, 0) // Empties the list for future requests
 
-	if res["status"] == "Succesfull" {
+	if res["status"] == "Successful" {
 		resCh <- res["status"].(string)
 		close(resCh)
 		return
@@ -291,7 +291,7 @@ func (e * Environment) GetHistoryData(resCh chan [] * Measurement, errCh chan st
 	res := utils.SocketCommunicate("visualizza_storico", clientInstance.LoggedUser, data)
 
 
-	if res["status"] == "Succesfull" {
+	if res["status"] == "Successful" {
 		historyFile, err := os.Create("history.csv")
 		if err != nil {
 			log.Fatalln(err)

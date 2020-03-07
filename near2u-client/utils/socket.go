@@ -64,22 +64,7 @@ func socketSend(conn net.Conn, jsonReq []byte) {
 	errorCheck(err, "Couldn't send data")
 }
 
-// TODO Handle messages bigger than buffer
 func socketReceive(conn net.Conn) []byte {
-	/*
-	buff := make([]byte, 8192) // Buffered reads from socket
-	for {
-		n, err := conn.Read(buff)
-		if err != nil && err.Error() == "EOF" {
-			log.Println("EOF Reached, breaking loop")
-			return []byte("EOF")
-		}
-		errorCheck(err, "Error receiving data")
-		log.Printf("Receive: %s\n", buff[:n])
-		return buff[:n]
-	}
-	return []byte("EOF")
-	 */
 	var buf bytes.Buffer
 	responseSize, err := io.Copy(&buf, conn)
 	fmt.Println("total size:", responseSize)
