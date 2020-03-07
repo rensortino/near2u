@@ -8,7 +8,7 @@ import (
 
 type Client struct {
 	ID         string
-	LoggedUser string
+	LoggedUser * utils.User
 	MQTTClient mqtt.Client
 }
 
@@ -20,7 +20,7 @@ func GetClientInstance() *Client {
 	if clientInstance == nil {
 		clientInstance = &Client{
 			"ID1",
-			"NULL",
+			&utils.User{},
 			nil,
 		}
 	}
@@ -46,7 +46,7 @@ func SetCurrentEnv(currentEnv * Environment, name string) {
 // Gets an array of Environment IDs from the server, to be displayed on the GUI for selection
 func (c *Client) GetEnvList(envNameCh chan string, errCh chan string) {
 
-	res := utils.SocketCommunicate("visualizza_ambienti", c.LoggedUser, nil)
+	res := utils.SocketCommunicate("visualizza_ambienti", c.LoggedUser.Auth, nil)
 
 	if res["status"] == "Failed" {
 		errCh <- res["error"].(string)
@@ -115,7 +115,7 @@ func (c *Client) GetTopicAndUri(envName string, topicCh, uriCh, errCh chan strin
 	}
 
 	//Returns broker's address
-	res := utils.SocketCommunicate("topic_ambiente", c.LoggedUser, data)
+	res := utils.SocketCommunicate("topic_ambiente", c.LoggedUser.Auth, data)
 
 	if res["status"] == "Failed" {
 		errCh <- res["error"].(string)
@@ -136,7 +136,7 @@ func (c *Client) CreateEnv(envName string, currentEnv * Environment, resCh, errC
 		envName,
 	}
 
-	res := utils.SocketCommunicate("crea_ambiente", c.LoggedUser, data)
+	res := utils.SocketCommunicate("crea_ambiente", c.LoggedUser.Auth, data)
 
 	if res["status"] == "Successful" {
 		SetCurrentEnv(currentEnv, envName)
@@ -152,12 +152,12 @@ func (c *Client) CreateEnv(envName string, currentEnv * Environment, resCh, errC
 func (c *Client) DeleteEnv(envName string, currentEnv * Environment, resCh, errCh chan string) {
 
 	data := struct {
-		Name string `json:"name"`
+		Name string `json:"envname"`
 	}{
 		envName,
 	}
 
-	res := utils.SocketCommunicate("elimina_ambiente", c.LoggedUser, data)
+	res := utils.SocketCommunicate("elimina_ambiente", c.LoggedUser.Auth, data)
 
 	if res["status"] == "Successful" {
 		if currentEnv.Name == envName {

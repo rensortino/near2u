@@ -126,7 +126,7 @@
         for(dispositivi_iterator = dispositivi.begin(); dispositivi_iterator != dispositivi.end(); dispositivi_iterator ++){
             delete (*dispositivi_iterator);
         }
-        dispositivi.~list();
+        dispositivi.clear();
     }
 
 

@@ -101,7 +101,8 @@
         for(ambiente_iterator = ambienti.begin(); ambiente_iterator != ambienti.end(); ambiente_iterator ++){
             delete (*ambiente_iterator);
         }
-        ambienti.~list();
+        ambienti.clear();
+
     }
     
 

@@ -72,7 +72,7 @@
 		std::string query = "INSERT INTO User (name, surname, email, password,auth_token)\
                                 VALUES ('"+ data["name"].asString() + "','" + data["surname"].asString() + "','"+data["email"].asString()+"','"+data["password"].asString()+"','"+SHA_Crypto(data["email"].asString() + data["password"].asString())+"');";
 		if(MYSQL::Query(query) == 0){
-			response["status"] = "Succesfull";
+			response["status"] = "Successful";
 			response["data"]["name"] = data["name"].asString();
 			response["data"]["surname"] = data["surname"].asString();
 			response["data"]["email"] = data["email"].asString();
@@ -107,8 +107,9 @@
 				while (res->next()) {
 					std::cout << "auth_token = '" << res->getString("auth_token") << "'" << std::endl;
 					response["data"]["auth"] = (std::string) res->getString("auth_token");
+					response["data"]["admin"] = res->getBoolean("Admin");
 					User * user = new User((std::string) res->getString("name"),(std::string) res->getString("surname"),(std::string) res->getString("email"),(std::string) res->getString("auth_token"),(std::string) res->getString("password"));
-					user->setAdmin(true);// to give admin privilege
+					user->setAdmin(res->getBoolean("Admin"));
 					std::string query = "select Ambiente.cod_ambiente, Ambiente.name from (Ambiente join Ambiente_User on Ambiente.cod_ambiente = Ambiente_User.cod_ambiente) where User_email = '"+ user->getemail()+"'; ";
 					sql::ResultSet *ambienti_db = MYSQL::Select_Query(query);
 					if(ambienti_db ->rowsCount() > 0){
@@ -147,13 +148,16 @@
 					Controller::users.push_back(user);
 					User_mutex.unlock();
 				}
-				response["status"] = "Succesfull";   
+				response["status"] = "Successful";   
 			}
 			delete res;
 		}
 		else{
-			response["status"] = "Succesfull";
-			response["data"]["auth"] = search_on_cache(data["Email"].asString(),data["Password"].asString())->getauth_token();
+			User * current_user = search_on_cache(data["Email"].asString(),data["Password"].asString());
+			response["status"] = "Successful";
+			response["data"]["auth"] = current_user->getauth_token();
+			response["data"]["admin"] = current_user->getAdmin();
+			
 		}
 			return response;  
 
@@ -192,7 +196,7 @@
 			std::string cod_ambiente = Current_User ->getemail() + data["data"]["name"].asString();
 			Ambiente * ambiente = Current_User->getAmbiente(cod_ambiente);
 			if(ambiente != nullptr){
-				response["status"] = "Succesfull";
+				response["status"] = "Successful";
 				response["data"]["broker_host"] = "localhost:8082"; // qua poi inserire una variabile d'ambiente
 				response["data"]["topic"] =  ambiente->getcodAmbiente();
 			}
@@ -234,7 +238,7 @@
 		
 		if (MYSQL::Query(query) == 0){
 				response["data"]["name"] = name;
-				response["status"] = "Succesfull";
+				response["status"] = "Successful";
 				response["error"] = "";
 				Controller::User_mutex.lock();
 				Current_User->addAmbiente(name,cod_ambiente);
@@ -316,7 +320,7 @@
 
 		}
 		else{
-			response["status"] = "Succesfull";
+			response["status"] = "Successful";
 			response["error"] = "";
 			response["data"] = "insert completed";
 			std::cout << Current_User->getAmbiente(cod_ambiente)->getDispositivi()->size() << std::endl;
@@ -355,7 +359,7 @@
 			response["data"]["environments"][i] = (*ambienti_iterator)->getNome();
 			i++;
     	}
-        response["status"] = "Succesfull";
+        response["status"] = "Successful";
 		response["error"]= "";
 		return response;
 				
@@ -382,7 +386,7 @@
 			return response;
 		}
 		std::list<Dispositivo *> * dispositivi = Current_User->getDispositivi(cod_ambiente);
-		response["status"] = "Succesfull";
+		response["status"] = "Successful";
 		response["data"]["devices"]= Json::Value(Json::arrayValue);
 		std::list<Dispositivo *>::iterator dispositivi_iterator;
 		for(dispositivi_iterator = dispositivi->begin();dispositivi_iterator != dispositivi->end();dispositivi_iterator ++)
@@ -413,7 +417,7 @@
 			
 			
 		}
-        response["status"] = "Succesfull";
+        response["status"] = "Successful";
 				
 		return response;
 		
@@ -458,7 +462,7 @@
 				Current_User->deleteDispositivo(cod_ambiente,cod_sensore);
 				Controller::User_mutex.unlock();
 			}
-			response["status"] = "Succesfull";
+			response["status"] = "Successful";
 			response["error"] = "";
 			response["data"] = "deletion completed";
 			return response;
@@ -489,7 +493,7 @@
 		std::string comando = data["data"]["command"].asString();
 
 		if(Current_User->inviaComando(code_ambiente,code,comando)){
-			response["status"] = "Succesfull";
+			response["status"] = "Successful";
 			response["error"] = "";
 			response["data"] = "command sent sucessfully";
 		}
@@ -527,7 +531,7 @@
 			}
 		else{
 			response["data"]["sensor_data"]= Json::Value(Json::arrayValue);
-			response["status"] = "Succesfull";
+			response["status"] = "Successful";
 			response["error"] = "";
 			int i = 0;
 			while (res->next()) {
@@ -552,10 +556,10 @@
 			response["data"] = "";
 			return response;
 		}
-
+		// elimana ambiente deve eliminare anche gli ambienti nel DB inoltre la tabella Ambiente_Dispositivo non è necessaria. bisogna anche eliminare la sottoscrizione 
 		std::string code_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
 		if(Current_User->eliminaAmbiente(code_ambiente)){
-			response["status"] = "Succesfull";
+			response["status"] = "Successful";
 			response["error"] = "";
 			response["data"] = "Ambiente "+ data["data"]["envname"].asString() +" deleted";
 		}
@@ -581,10 +585,12 @@
 			return response;
 		}
 
-		delete Current_User;
-		users.remove(Current_User);
 
-		response["status"] = "Succesfull";
+		users.remove(Current_User);
+		delete Current_User;
+		
+
+		response["status"] = "Successful";
 		response["error"] = "";
 		response["data"] = "Logout";
 		return response;

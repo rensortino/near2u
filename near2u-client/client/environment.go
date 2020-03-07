@@ -3,6 +3,8 @@ package client
 import (
 	"../utils"
 	"fmt"
+	"image"
+	"image/png"
 	"log"
 	"os"
 	"strconv"
@@ -31,7 +33,7 @@ func (e * Environment) GetSensorsList(resCh chan string, errCh chan string) {
 		"sensors",
 	}
 
-	res := utils.SocketCommunicate("visualizza_dispositivi", clientInstance.LoggedUser, data)
+	res := utils.SocketCommunicate("visualizza_dispositivi", clientInstance.LoggedUser.Auth, data)
 
 	if res["status"] == "Failed" {
 		errCh <- res["error"].(string)
@@ -74,7 +76,7 @@ func (e * Environment) GetActuatorList(resCh chan string, errCh chan string) {
 		"actuators",
 	}
 
-	res := utils.SocketCommunicate("visualizza_dispositivi", clientInstance.LoggedUser, data)
+	res := utils.SocketCommunicate("visualizza_dispositivi", clientInstance.LoggedUser.Auth, data)
 
 	if res["status"] == "Failed" {
 		errCh <- res["error"].(string)
@@ -221,29 +223,42 @@ func (e * Environment) DeleteActuator(code string, resCh, errCh chan string) {
 
 func (e * Environment) Done(operation string, resCh, errCh chan string) {
 
-	if len(deviceToDelete) == 0 {
-		errCh <- "No device selected"
-		return
-	}
-
-	data := struct {
-		Devices []int `json:"devices"`
-		EnvName string   `json:"envname"`
-	}{
-		deviceToDelete,
-		e.Name,
-	}
 
 	var res map[string]interface{}
 
 	switch operation {
 	case "add":
-		res = utils.SocketCommunicate("inserisci_dispositivi", clientInstance.LoggedUser, data)
+		if len(deviceList) == 0 {
+			errCh <- "No device selected"
+			return
+		}
+
+		data := struct {
+			Devices []interface{} `json:"devices"`
+			EnvName string   `json:"envname"`
+		}{
+			deviceList,
+			e.Name,
+		}
+		res = utils.SocketCommunicate("inserisci_dispositivi", clientInstance.LoggedUser.Auth, data)
+		deviceList = make([]interface{}, 0) // Empties the list for future requests
 	case "delete":
-		res = utils.SocketCommunicate("elimina_dispositivi", clientInstance.LoggedUser, data)
+		if len(deviceToDelete) == 0 {
+			errCh <- "No device selected"
+			return
+		}
+
+		data := struct {
+			Devices []int `json:"devices"`
+			EnvName string   `json:"envname"`
+		}{
+			deviceToDelete,
+			e.Name,
+		}
+		res = utils.SocketCommunicate("elimina_dispositivi", clientInstance.LoggedUser.Auth, data)
+		deviceToDelete = make([]int, 0) // Empties the list for future requests
 	}
 
-	deviceList = make([]interface{}, 0) // Empties the list for future requests
 
 	if res["status"] == "Successful" {
 		resCh <- res["status"].(string)
@@ -288,7 +303,7 @@ func (e * Environment) GetHistoryData(resCh chan [] * Measurement, errCh chan st
 		e.Name,
 	}
 
-	res := utils.SocketCommunicate("visualizza_storico", clientInstance.LoggedUser, data)
+	res := utils.SocketCommunicate("visualizza_storico", clientInstance.LoggedUser.Auth, data)
 
 
 	if res["status"] == "Successful" {
@@ -311,7 +326,7 @@ func (e * Environment) GetHistoryData(resCh chan [] * Measurement, errCh chan st
 				d["time"].(string),
 			}
 			history = append(history, measurement)
-			historyFile.WriteString(fmt.Sprintf("%d,%f,%s", measurement.Code, measurement.Value, measurement.Timestamp))
+			historyFile.WriteString(fmt.Sprintf("%d,%f,%s\n", measurement.Code, measurement.Value, measurement.Timestamp))
 		}
 
 		resCh <- history
@@ -322,4 +337,20 @@ func (e * Environment) GetHistoryData(resCh chan [] * Measurement, errCh chan st
 		close(errCh)
 		return
 	}
+}
+
+func (e * Environment) GetPlot() image.Image {
+
+	plotFile, err := os.Open("grafico.png")
+	if err != nil {
+		log.Fatalln("Error opening plot file")
+	}
+	defer plotFile.Close()
+
+	img, err := png.Decode(plotFile)
+	if err != nil {
+		log.Fatalln("Error decoding image")
+	}
+
+	return img
 }

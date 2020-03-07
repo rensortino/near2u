@@ -129,7 +129,7 @@ func (a * Actuator) SendCommand(envName, command string) string {
 				a.Code,
 				command,
 			}
-			res := utils.SocketCommunicate("invia_comando", clientInstance.LoggedUser, data)
+			res := utils.SocketCommunicate("invia_comando", clientInstance.LoggedUser.Auth, data)
 
 			if res["status"] == "Successful" {
 				return res["data"].(string)

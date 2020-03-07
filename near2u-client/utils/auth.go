@@ -1,6 +1,11 @@
 package utils
 
-func Login(responseMsg, token chan string, email, password string) {
+type User struct {
+	Auth string
+	IsAdmin bool
+}
+
+func Login(resCh, errCh chan string, loggedUser chan * User, email, password string) {
 
 	data := struct {
 		Email    string
@@ -14,22 +19,29 @@ func Login(responseMsg, token chan string, email, password string) {
 
 	if res["status"] == "Successful" {
 		// Accesses nested json
-		token <- res["data"].(map[string]interface{})["auth"].(string)
-		responseMsg <- "User Authenticated"
+		usr := &User{
+			res["data"].(map[string]interface{})["auth"].(string),
+			res["data"].(map[string]interface{})["admin"].(bool),
+		}
+		if usr.IsAdmin {
+			resCh <- "Admin Authenticated"
+		} else {
+			resCh <- "User Authenticated"
+		}
+		loggedUser <- usr
 	} else {
-		token <- "NULL"
-		responseMsg <- res["error"].(string)
+		errCh <- res["error"].(string)
 	}
 
 }
 
-func Logout(loggedUser string, resCh, errCh chan string) {
+func (u * User) Logout(resCh, errCh chan string) {
 
-	res := SocketCommunicate("logout", loggedUser, nil)
+	res := SocketCommunicate("logout", u.Auth, nil)
 
 	if res["status"] == "Successful" {
 		// Accesses nested json
-		resCh <- "User Authenticated"
+		resCh <- "User Logout"
 	} else {
 		errCh <- res["error"].(string)
 	}
