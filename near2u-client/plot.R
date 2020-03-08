@@ -6,4 +6,3 @@ png("grafico.png")
 df_sensor <- df[df$Code == args[1],]
 plot(df$Value)
 dev.off()
-return "grafico.png"

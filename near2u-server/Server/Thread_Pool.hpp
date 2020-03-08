@@ -9,32 +9,40 @@
 #include <mutex> // std::mutex
 #include <map>
 #include <condition_variable> // std::condition_variable
+#include "Controller.hpp"
+
+enum StringValue {      Default,
+                        Register, 
+                        Login, 
+                        Topic_Ambiente,
+                        Crea_Ambiente,
+                        Inseresci_Dispositivi,
+                        Visualizza_Ambienti,
+                        Visualizza_Dispositivi,
+                        Elimina_Dispositivi,
+                        Invia_Comando,
+                        Visualizza_Storico,
+                        Elimina_Ambiente,
+                        Logout,
+                        };
 
 
     class Thread_Pool {
 
     public:
         Thread_Pool();
-        ~Thread_Pool();
         void queueWork(int fd /* file descriptor for socket */, std::string& request);
+        void Initialize();
+        void stop();
         
-
+        Controller * controller;
     private:
         std::condition_variable_any workQueueConditionVariable;
-
-        std::vector<std::thread> threads; // We store the threads in this variable
-
-        //we need a mutex for accessing che queue
+        std::map<std::string, StringValue> s_mapStringValues;
+        std::vector<std::thread> threads;
         std::mutex QueueMutex;
-
-        //we need a queue of request that has to be processed
-
         std::queue<std::pair<int,std::string>> requestqueue;
-
-        bool done; // to notify to stop the server
-
+        bool done; 
         void TaskWork();
         void ElaborateRequest(const std::pair<int,std::string>);
-        void example();
-
     };

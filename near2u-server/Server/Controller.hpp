@@ -18,9 +18,6 @@ private:
 	static Controller* instance;
 	std::shared_mutex User_mutex;
 	MQTTClient client;
-	MQTTClient_connectOptions conn_opts;
-	MQTTClient_message pubmsg;
-	MQTTClient_deliveryToken token;
 
 	User* Auth(std::string auth_token);
 	User * search_on_cache(std::string email,std::string password);
@@ -43,6 +40,7 @@ public:
 	Json::Value Visualizza_Storico(Json::Value data);
 	Json::Value Elimina_Ambiente(Json::Value data);
 	Json::Value Logout(Json::Value data);
+	~Controller();
 
 
 	

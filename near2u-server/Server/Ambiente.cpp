@@ -26,16 +26,14 @@
 
     void Ambiente::deleteDispositivo(int cod_dispositivo){
 
-        std::list<Dispositivo *>::iterator dispositivi_iterator;
-
-        for(dispositivi_iterator=dispositivi.begin(); dispositivi_iterator != dispositivi.end(); dispositivi_iterator ++){
-            
-            if((*dispositivi_iterator)->getCodice() == cod_dispositivo){
-                delete (*dispositivi_iterator);
-                dispositivi.erase(dispositivi_iterator);
-                break;
+         for(Dispositivo * dispositivo : dispositivi){
+            if(dispositivo->getCodice() == cod_dispositivo){
+                delete dispositivo;
+                dispositivi.remove(dispositivo);
+                    
             }
         }
+
         
     }
 
@@ -57,12 +55,9 @@
 
     Dispositivo * Ambiente::getDispositivo(int code){
 
-        std::list<Dispositivo *>::iterator dispositivi_iterator;
-
-        for(dispositivi_iterator=dispositivi.begin(); dispositivi_iterator != dispositivi.end(); dispositivi_iterator ++){
-            
-            if((*dispositivi_iterator)->getCodice() == code){
-                return (*dispositivi_iterator);
+        for(Dispositivo * dispositivo : dispositivi){
+            if(dispositivo->getCodice() == code){
+                return dispositivo;
                 
             }
         }
@@ -87,6 +82,7 @@
         }
 
         std::string topic = codAmbiente + std::to_string(code_attuatore);
+        std::cout << topic << std::endl;
 
         MQTTClient client;
         MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
@@ -115,6 +111,10 @@
         rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
         printf("Command with delivery token %d delivered\n", token);
 
+        
+        MQTTClient_disconnect(client, 10000);
+        MQTTClient_destroy(&client);
+
         return true;
         
 
@@ -122,9 +122,9 @@
     }
 
     Ambiente::~Ambiente(){
-        std::list<Dispositivo *>::iterator dispositivi_iterator;
-        for(dispositivi_iterator = dispositivi.begin(); dispositivi_iterator != dispositivi.end(); dispositivi_iterator ++){
-            delete (*dispositivi_iterator);
+     
+        for(Dispositivo * dispositivo : dispositivi){
+            delete dispositivo;
         }
         dispositivi.clear();
     }

@@ -21,7 +21,18 @@
 // questa funzione serve a simulare la pubblicazione sul broker mqtt da parte dei dispositivi dei vari ambienti
 using namespace MQTT;
 
-void sensors_pubblish(){
+
+bool contain(const std::string& topic, std::list<std::string>& lista_topic ){
+    std::list<std::string>::iterator lista_iterator;
+    for(lista_iterator = lista_topic.begin(); lista_iterator != lista_topic.end() ; lista_iterator ++ ){
+        if((*lista_iterator).compare(topic) == 0){
+            return true ;
+        }
+    }
+    return false;
+}
+
+void sensors_pubblish(bool & done){
 
 
     MQTTClient client;
@@ -61,7 +72,7 @@ void sensors_pubblish(){
 
     Controller * controller = Controller::getIstance();
 
-    while(true){
+    while(!done){
         std::this_thread::sleep_for (std::chrono::seconds(5));
         std::cout<< "checking for sensors" << std::endl;
         std::list<User *>::iterator users_iterator;
@@ -96,29 +107,21 @@ void sensors_pubblish(){
                        if(lista_topic_attuatori.empty()){
                            std::cout << "attuatore: " + std::to_string((*dispositivi_iterator)->getCodice()) + "subscribing to: " + topic_attuatore   << std::endl;
                             MQTTClient_subscribe(client_attuatori, topic_attuatore.c_str(), QOS);
+                            lista_topic_attuatori.push_back(topic_attuatore);
                        }
-                       for(topic_iterator = lista_topic_attuatori.begin(); topic_iterator != lista_topic_attuatori.end(); topic_iterator ++ ){
-                            if((*topic_iterator).compare(topic_attuatore) == 0){
-                                break;
-                            }
-                            else{
-                                std::cout << "attuatore: " + std::to_string((*dispositivi_iterator)->getCodice()) + "subscribing to: " + topic_attuatore   << std::endl;
-                                MQTTClient_subscribe(client_attuatori, topic_attuatore.c_str(), QOS);
-
-                            }
-                        }
-                        lista_topic_attuatori.push_back(topic_attuatore);
+                       if(contain(topic_attuatore,lista_topic_attuatori) == false){
+                           std::cout << "attuatore: " + std::to_string((*dispositivi_iterator)->getCodice()) + "subscribing to: " + topic_attuatore   << std::endl;
+                            MQTTClient_subscribe(client_attuatori, topic_attuatore.c_str(), QOS);
+                            lista_topic_attuatori.push_back(topic_attuatore);
+                       }
                        
                     }
                 }
             }
         }
         controller->getUser_mutex()->unlock_shared();
-
-
-        
     }
-    
+    printf("%d\n",done);    
     for(topic_iterator = lista_topic_attuatori.begin(); topic_iterator != lista_topic_attuatori.end(); topic_iterator ++ ){
         MQTTClient_unsubscribe(client, (*topic_iterator).c_str());
     }
@@ -126,5 +129,5 @@ void sensors_pubblish(){
     MQTTClient_destroy(&client_attuatori);
     MQTTClient_disconnect(client, 10000);
     MQTTClient_destroy(&client);
-    exit(0);
+    std::cout << "end simulation" <<std::endl;
 }

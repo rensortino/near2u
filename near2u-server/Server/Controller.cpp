@@ -22,6 +22,7 @@
 	void Controller::setUpMqtt(){
 		using namespace MQTT;
 		if(client == nullptr){
+			MQTTClient_connectOptions conn_opts;
 			conn_opts = MQTTClient_connectOptions_initializer;
 			
 
@@ -117,7 +118,7 @@
 							std::string name_ambiente = ambienti_db->getString("name");
 							std::string cod_ambiente = ambienti_db->getString("cod_ambiente");
 							user->addAmbiente(name_ambiente,cod_ambiente);
-							query = "select Dispositivo.name, Dispositivo.type, Dispositivo.code from ((Dispositivo join Sensore on Sensore.code = Dispositivo.code) join Dispositivo_Ambiente on Dispositivo.code = Dispositivo_Ambiente.code) where Dispositivo_Ambiente.cod_ambiente = '"+ cod_ambiente +"';";
+							query = "select Dispositivo.name, Dispositivo.type, Dispositivo.code from (Dispositivo join Sensore on Sensore.code = Dispositivo.code) where Dispositivo.cod_ambiente = '"+ cod_ambiente +"';";
 							sql::ResultSet *sensori_db = MYSQL::Select_Query(query);
 							while(sensori_db->next()){
 								std::string nome_sensore=sensori_db->getString("name");
@@ -125,7 +126,7 @@
 								int code_sensore= sensori_db->getInt("code");
 								user->addDispositivo(cod_ambiente,code_sensore,nome_sensore,tipo_sensore,nullptr);
 							}
-							query = "select Dispositivo.name, Dispositivo.type, Dispositivo.code from ((Dispositivo join Attuatore on Attuatore.code = Dispositivo.code) join Dispositivo_Ambiente on Dispositivo.code = Dispositivo_Ambiente.code) where Dispositivo_Ambiente.cod_ambiente = '"+ cod_ambiente +"';";
+							query = "select Dispositivo.name, Dispositivo.type, Dispositivo.code from (Dispositivo join Attuatore on Attuatore.code = Dispositivo.code) where Dispositivo.cod_ambiente = '"+ cod_ambiente +"';";
 							sql::ResultSet *attuatori_db = MYSQL::Select_Query(query);
 							while(attuatori_db->next()){
 									std::list<std::string> comandi;
@@ -279,11 +280,9 @@
 				auto commandsEntries = (*devices_to_add)["commands"];
 				Json::Value::iterator commands_to_add;
 				std::list<std::string> commands;
-				std::string query = " insert into Dispositivo (name,type,code) values ('"+name+"','"+type+"',"+std::to_string(code)+");";
+				std::string query = " insert into Dispositivo (name,type,code,cod_ambiente) values ('"+name+"','"+type+"',"+std::to_string(code)+",'"+ cod_ambiente +"');";
 				transaction.push_back(query);
 				query = "insert into Attuatore (code) values ("+std::to_string(code) +");";
-				transaction.push_back(query);
-				query = " insert into Dispositivo_Ambiente (cod_ambiente,code) values ('"+cod_ambiente +"',"+std::to_string(code)+");";
 				transaction.push_back(query);
 				for(commands_to_add = commandsEntries.begin(); commands_to_add != commandsEntries.end(); commands_to_add ++ ){
 					std::string command = (*commands_to_add).asString();
@@ -296,11 +295,9 @@
 			}
 			else{
 				
-				std::string query = " insert into Dispositivo (name,type,code) values ('"+name+"','"+type+"',"+std::to_string(code)+");";
+				std::string query = " insert into Dispositivo (name,type,code,cod_ambiente) values ('"+name+"','"+type+"',"+std::to_string(code)+",'"+ cod_ambiente +"');";
 				transaction.push_back(query);
 				query = "insert into Sensore (code) values ("+std::to_string(code) +");";
-				transaction.push_back(query);
-				query = " insert into Dispositivo_Ambiente (cod_ambiente,code) values ('"+cod_ambiente +"',"+std::to_string(code)+");";
 				transaction.push_back(query);
 				Current_User->addDispositivo(cod_ambiente,code,name,type,nullptr);
 
@@ -337,7 +334,7 @@
 
 		User * Current_User = Controller::Auth(data["auth"].asString());
 
-		if(Current_User == nullptr || Current_User->getAdmin() == false){
+		if(Current_User == nullptr){
 			response["status"] = "Failed";
 			response["error"] = "Unauthorized";
 			response["data"] = "";
@@ -370,7 +367,7 @@
 
 		User * Current_User = Controller::Auth(data["auth"].asString());
 		
-		if(Current_User == nullptr || Current_User->getAdmin() == false){
+		if(Current_User == nullptr){
 			response["status"] = "Failed";
 			response["error"] = "Unauthorized";
 			response["data"] = "";
@@ -556,9 +553,10 @@
 			response["data"] = "";
 			return response;
 		}
-		// elimana ambiente deve eliminare anche gli ambienti nel DB inoltre la tabella Ambiente_Dispositivo non è necessaria. bisogna anche eliminare la sottoscrizione 
 		std::string code_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
-		if(Current_User->eliminaAmbiente(code_ambiente)){
+		std::string query = "delete from Ambiente where cod_ambiente = '" + code_ambiente +"'";
+		if(Current_User->eliminaAmbiente(code_ambiente) && MYSQL::Query(query) == 0){
+			MQTTClient_unsubscribe(client, code_ambiente.c_str());
 			response["status"] = "Successful";
 			response["error"] = "";
 			response["data"] = "Ambiente "+ data["data"]["envname"].asString() +" deleted";
@@ -594,6 +592,20 @@
 		response["error"] = "";
 		response["data"] = "Logout";
 		return response;
+
+	}
+
+	Controller::~Controller(){
+		User_mutex.lock();
+		std::list<User *>::iterator users_iterator;
+		for(User * user : users){
+			delete user;
+		}
+        users.clear();
+		User_mutex.unlock();
+		instance = 0;
+		MQTTClient_disconnect(client, 10000);
+        MQTTClient_destroy(&client);
 
 	}
 	

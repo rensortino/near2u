@@ -8,7 +8,6 @@ primary key (code)
 
 
   
-        insert into Dispositivo (name,type,code) values (attuator_name,attuator_type,attuator_cod);
+        insert into Dispositivo (name,type,code,cod_ambiente) values (attuator_name,attuator_type,attuator_cod,cod_ambiente);
         insert into Attuatore (cod_attuatore) values (attuator_cod);
-        insert into Dispositivo_Ambiente (cod_ambiente,code) values (ambiente_cod,attuator_cod);
         

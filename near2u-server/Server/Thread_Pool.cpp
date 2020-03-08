@@ -1,29 +1,15 @@
 
 #include "Thread_Pool.hpp"
-#include "Controller.hpp"
 
-    enum StringValue { Default,
-                        Register, 
-                        Login, 
-                        Topic_Ambiente,
-                        Crea_Ambiente,
-                        Inseresci_Dispositivi,
-                        Visualizza_Ambienti,
-                        Visualizza_Dispositivi,
-                        Elimina_Dispositivi,
-                        Invia_Comando,
-                        Visualizza_Storico,
-                        Elimina_Ambiente,
-                        Logout
-                        };
-    static std::map<std::string, StringValue> s_mapStringValues;
+    
+   
 
     static void Initialize();
 
     Thread_Pool::Thread_Pool() {
+        
         done = false;
         Initialize();
-        // set the number of thread depending on the hardware if the hardware is not multithread set the number of thread to 1
         auto numberOfThreads = std::thread::hardware_concurrency();
         if (numberOfThreads == 0) {
         numberOfThreads = 1;
@@ -31,20 +17,22 @@
         unsigned i ;
         for(i = 0 ; i < numberOfThreads; i ++){
             threads.push_back(std::thread(&Thread_Pool::TaskWork,this));
-            // we populate the thread vector indicating the function each thread should execute
         }
     }
-    Thread_Pool::~Thread_Pool(){
-        done = true; //Indicate that the server is shutting down
+
+    void Thread_Pool::stop(){
+        done = true; 
         workQueueConditionVariable.notify_all();
         for(auto& thread : threads){
             if(thread.joinable()){
                 thread.join();
             }
         }
+        delete controller;
+        std::cout << "Thread pool deleted" <<std::endl;
     }
 
-    void Thread_Pool::queueWork(int fd /* file descriptor for socket */, std::string& request){
+    void Thread_Pool::queueWork(int fd, std::string& request){
 
         std::lock_guard<std::mutex> g(QueueMutex);
         requestqueue.push(std::pair<int, std::string>(fd, request));
@@ -57,15 +45,13 @@
             {
             std::unique_lock<std::mutex> g(QueueMutex);
             workQueueConditionVariable.wait(g, [&]{
-            // Only wake up if there are elements in the queue or the program is
-            // shutting down
             return !requestqueue.empty() || done;
             });
-
-            request = requestqueue.front();
-            requestqueue.pop();
-        }
-        ElaborateRequest(request);
+                request = requestqueue.front();
+                requestqueue.pop();
+                ElaborateRequest(request);  
+            }
+            
         }
     }
 
@@ -73,11 +59,10 @@
         Json::Reader reader;
         Json::Value requestjson;
         std::string response;
-        Controller * controller = Controller::getIstance();
+        controller = Controller::getIstance();
         controller->setUpMqtt();
         reader.parse(request.second, requestjson);
         std::cout << "new request arrived requesting API: " + requestjson["function"].asString() <<std::endl;
-        std::cout << s_mapStringValues[requestjson["function"].asString()] << std::endl;
         switch (s_mapStringValues[requestjson["function"].asString()])
         {
             case Register:
@@ -126,12 +111,9 @@
         close(request.first);
     }
 
-    void Thread_Pool::example(){
-        std::cout << "prova adsdadd" << std::endl;
-    }
 
 
-    void Initialize(){
+    void Thread_Pool::Initialize(){
     s_mapStringValues["register"] = Register;
     s_mapStringValues["login"] = Login;
     s_mapStringValues["topic_ambiente"] = Topic_Ambiente;
@@ -145,7 +127,4 @@
     s_mapStringValues["elimina_ambiente"] = Elimina_Ambiente;
     s_mapStringValues["logout"] = Logout;
     
-    std::cout << "s_mapStringValues contains " 
-        << s_mapStringValues.size() 
-        << " entries." << std::endl;
     }

@@ -8,7 +8,6 @@ primary key (code)
 
 
 
-        insert into Dispositivo (name,type,code) values (name,type,cod);
+        insert into Dispositivo (name,type,code,cod_ambiente) values (name,type,cod,cod_ambiente);
         insert into Sensore (cod_sensore) values (sensor_cod);
-        insert into Dispositivo_Ambiente (cod_ambiente,code) values (ambiente_cod,sensor_cod);
         

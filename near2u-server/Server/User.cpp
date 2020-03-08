@@ -29,13 +29,12 @@
         return &ambienti;
     }
     Ambiente * User::getAmbiente(std::string& cod_Ambiente){
-        std::list<Ambiente *>::iterator ambienti_iterator;
-
-        for(ambienti_iterator=ambienti.begin(); ambienti_iterator != ambienti.end(); ambienti_iterator ++){
-            if((*ambienti_iterator)->getcodAmbiente().compare(cod_Ambiente) == 0){
-                return (*ambienti_iterator);
-            }
+        for(Ambiente * ambiente : ambienti){
+            if(ambiente->getcodAmbiente().compare(cod_Ambiente) == 0){
+                return ambiente;
         }
+        }
+
         return nullptr;
 
     }
@@ -97,9 +96,9 @@
     }
 
     User::~User(){
-        std::list<Ambiente *>::iterator ambiente_iterator;
-        for(ambiente_iterator = ambienti.begin(); ambiente_iterator != ambienti.end(); ambiente_iterator ++){
-            delete (*ambiente_iterator);
+        
+        for(Ambiente * ambiente : ambienti){
+           delete ambiente;
         }
         ambienti.clear();
 
