@@ -20,8 +20,6 @@ var (
 	currentEnv     *client.Environment
 )
 
-//TODO fix back buttons
-
 func initWindow() {
 
 	// Creates a new graphic application
@@ -77,6 +75,7 @@ func getHomepageWidget() *qt.QWidget {
 	})
 	layout.AddWidget(selEnvBtn, 0, 0)
 
+	// Set of functionalities restricted to the admin
 	if clientInstance.LoggedUser.IsAdmin {
 		newEnvBtn := qt.NewQPushButton2("Create / Delete Environment", nil)
 		newEnvBtn.ConnectClicked(func(checked bool) {
@@ -197,7 +196,7 @@ func getRegisterWidget() *qt.QWidget {
 
 	registerBtn := qt.NewQPushButton2("Register", nil)
 	registerBtn.ConnectClicked(func(checked bool) {
-		// TODO Email field validation check
+
 		rx := make(chan string)
 		go utils.Register(rx, name.Text(), surname.Text(), email.Text(), password.Text())
 
@@ -245,8 +244,8 @@ func getSelectEnvForMQTTWidget() *qt.QWidget {
 		case topic := <-topicCh:
 			uri := <-uriCh
 			changeWindow(widget, getRTDataWidget(topic, uri))
-		case error := <-errCh:
-			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		case err := <-errCh:
+			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
 	})
 	layout.AddWidget(selEnvBtn, 0, 0)
@@ -277,7 +276,6 @@ func getConfigureEnvWidget() *qt.QWidget {
 	addBtn := qt.NewQPushButton2("Add Devices", nil)
 	addBtn.ConnectClicked(func(checked bool) {
 		client.SetCurrentEnv(currentEnv, envListCB.CurrentText())
-		fmt.Printf("\nCURRENTENV: %v", currentEnv)
 		resCh := make(chan string)
 		errCh := make(chan string)
 		go currentEnv.GetDevicesList(resCh, errCh)
@@ -285,8 +283,8 @@ func getConfigureEnvWidget() *qt.QWidget {
 		case res := <- resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 			changeWindow(widget, getSelectDeviceTypeWidget())
-		case error := <-errCh:
-			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		case err := <-errCh:
+			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
 	})
 	layout.AddWidget(addBtn, 0, 0)
@@ -301,8 +299,8 @@ func getConfigureEnvWidget() *qt.QWidget {
 		case res := <- resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 			changeWindow(widget, getDeleteSensorsWidget())
-		case error := <-errCh:
-			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		case err := <-errCh:
+			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
 	})
 	layout.AddWidget(delBtn, 0, 0)
@@ -336,8 +334,8 @@ func getAddDelEnvWidget() *qt.QWidget {
 		case res := <- resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 			changeWindow(widget, getSelectDeviceTypeWidget())
-		case error := <-errCh:
-			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		case err := <-errCh:
+			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
 	})
 	layout.AddWidget(newEnvBtn, 0, 0)
@@ -351,8 +349,8 @@ func getAddDelEnvWidget() *qt.QWidget {
 		case res := <- resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 			changeWindow(widget, getHomepageWidget())
-		case error := <-errCh:
-			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		case err := <-errCh:
+			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
 	})
 	layout.AddWidget(delEnvBtn, 0, 0)
@@ -466,7 +464,10 @@ func getAddSensorActuatorWidget(addActuator bool) *qt.QWidget {
 	kind.SetPlaceholderText("Kind")
 	layout.AddWidget(kind, 0, 0)
 
+	addSenBtn := qt.NewQPushButton2("Add Sensor", nil)
 	if addActuator {
+
+		addSenBtn.SetVisible(false)
 		commands := make([]string, 0)
 
 		cmd := qt.NewQLineEdit(nil)
@@ -500,14 +501,13 @@ func getAddSensorActuatorWidget(addActuator bool) *qt.QWidget {
 			select {
 			case res := <-resCh:
 				qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-			case error := <-errCh:
-				qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+			case err := <-errCh:
+				qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 			}
 		})
 		layout.AddWidget(addActBtn, 0, 0)
 	}
 
-	addSenBtn := qt.NewQPushButton2("Add Sensor", nil)
 	addSenBtn.ConnectClicked(func(checked bool) {
 
 		resCh := make(chan string)
@@ -516,8 +516,8 @@ func getAddSensorActuatorWidget(addActuator bool) *qt.QWidget {
 		select {
 		case res := <-resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-		case error := <-errCh:
-			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		case err := <-errCh:
+			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
 	})
 	layout.AddWidget(addSenBtn, 0, 0)
@@ -586,7 +586,6 @@ func getSendCommandWidget() *qt.QWidget {
 			for _, value := range currentEnv.ActuatorMap {
 				tmp = append(tmp, "Code: " + strconv.Itoa(value.Code) + " Name: " + value.Name)
 			}
-			fmt.Printf("TMP %v", tmp)
 			devicesCB.Clear()
 			devicesCB.AddItems(tmp)
 			devicesCB.SetVisible(true)
@@ -666,8 +665,8 @@ func getDeviceList(devicesCB * qt.QComboBox) {
 		}
 		devicesCB.AddItems(tmp)
 
-	case error := <-errCh:
-		qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+	case err := <-errCh:
+		qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 	}
 }
 
@@ -696,8 +695,8 @@ func getDeleteSensorsWidget() *qt.QWidget {
 		select {
 		case res := <-resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-		case error := <-errCh:
-			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		case err := <-errCh:
+			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
 	})
 	layout.AddWidget(addSenBtn, 0, 0)
@@ -710,8 +709,8 @@ func getDeleteSensorsWidget() *qt.QWidget {
 		select {
 		case res := <-resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-		case error := <-errCh:
-			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		case err := <-errCh:
+			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
 	})
 	layout.AddWidget(addActBtn, 0, 0)
@@ -782,8 +781,8 @@ func getHistoryDataWidget() *qt.QWidget {
 		select {
 		case history := <- resCh:
 			changeWindow(widget, getVisualizeHistoryWidget(history))
-		case error := <-errCh:
-			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		case err := <-errCh:
+			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
 	})
 	layout.AddWidget(selEnvBtn, 0, 0)

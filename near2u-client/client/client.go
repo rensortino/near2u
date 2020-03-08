@@ -37,7 +37,8 @@ func SetCurrentEnv(currentEnv * Environment, name string) {
 
 	if currentEnv.Name != name {
 		currentEnv.Name = name
-		currentEnv.SensorMap = make(map[string]Sensor) // Initialize the map to populate it with the devices
+		// Initialize the maps to populate them with the devices
+		currentEnv.SensorMap = make(map[string]Sensor)
 		currentEnv.ActuatorMap = make(map[string]Actuator)
 		currentEnv.LastModified = 0
 	}
@@ -91,16 +92,6 @@ func (c *Client) StopGettingData(topic string, rtCh chan interface{}, quit chan 
 	c.MQTTClient.Unsubscribe(topic)
 	c.MQTTClient.Disconnect(1000) // Waits for 1 second before disconnecting
 
-	// Empties the channel before closing it
-	/*
-	select {
-	case <-rtCh:
-		fmt.Println("DEAD")
-		close(rtCh)
-	default:
-		close(rtCh)
-	}
-	 */
 	quit <- true
 	close(rtCh)
 	close(quit)

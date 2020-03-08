@@ -10,7 +10,6 @@ type Device struct {
 
 type DeviceI interface {
 	Append(deviceList []interface{}) interface{}
-	Delete(code string) interface{}
 }
 
 type Actuator struct {
@@ -81,8 +80,6 @@ func (s * Sensor) Append(deviceList []interface{}) ([]interface{}, bool) {
 			}
 		}
 	}
-
-
 	return append(deviceList, sensor), true
 }
 

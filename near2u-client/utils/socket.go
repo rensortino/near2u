@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -11,7 +10,6 @@ import (
 	"strings"
 )
 
-// TODO Make dynamic
 var (
 	ip   = "127.0.0.1"
 	port = 3333
@@ -66,8 +64,7 @@ func socketSend(conn net.Conn, jsonReq []byte) {
 
 func socketReceive(conn net.Conn) []byte {
 	var buf bytes.Buffer
-	responseSize, err := io.Copy(&buf, conn)
-	fmt.Println("total size:", responseSize)
+	_, err := io.Copy(&buf, conn)
 	errorCheck(err, "Error receiving data")
 	log.Printf("Receive: %v\n", buf.String())
 	return buf.Bytes()
