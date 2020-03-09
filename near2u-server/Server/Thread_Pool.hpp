@@ -24,6 +24,7 @@ enum StringValue {      Default,
                         Visualizza_Storico,
                         Elimina_Ambiente,
                         Logout,
+                        Associa_Utente,
                         };
 
 

@@ -85,7 +85,8 @@
     }
 
     bool User::eliminaAmbiente(std::string& cod_ambiente){
-        Ambiente * ambiente = getAmbiente(cod_ambiente);
+        Ambiente * ambiente;
+        ambiente= getAmbiente(cod_ambiente);
         if(ambiente == nullptr){
             return false;
         }

@@ -32,6 +32,7 @@ public:
 	Json::Value Register(Json::Value data);
 	Json::Value Login(Json::Value data);
 	Json::Value Crea_Ambiente(Json::Value data);
+	Json::Value Associa_Utente(Json::Value data);
 	Json::Value Visualizza_Ambienti(Json::Value data);
 	Json::Value Inserisci_Dispositivi(Json::Value data);
 	Json::Value Visualizza_Dispositivi(Json::Value data);

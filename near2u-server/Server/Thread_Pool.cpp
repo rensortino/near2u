@@ -102,6 +102,9 @@
             case Logout:
                 response = controller->Logout(requestjson).toStyledString();
                 break;
+            case Associa_Utente:
+                response = controller->Associa_Utente(requestjson).toStyledString();
+                break;
             default:
                 response = "{\"status\" : \"Service not avaible\"}"; 
                 break;
@@ -126,5 +129,5 @@
     s_mapStringValues["visualizza_storico"] = Visualizza_Storico;
     s_mapStringValues["elimina_ambiente"] = Elimina_Ambiente;
     s_mapStringValues["logout"] = Logout;
-    
+    s_mapStringValues["associa_utente"] = Associa_Utente;
     }

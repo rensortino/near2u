@@ -340,7 +340,7 @@ func getAssociateUserWidget() *qt.QWidget {
 
 		resCh := make(chan string)
 		errCh := make(chan string)
-		go clientInstance.AssociateUser(resCh, errCh, env.Text(), email.Text())
+		go clientInstance.AssociateUser( env.Text(), email.Text(),resCh, errCh)
 		select {
 		case res := <- resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
@@ -353,7 +353,7 @@ func getAssociateUserWidget() *qt.QWidget {
 
 	backBtn := qt.NewQPushButton2("Back", nil)
 	backBtn.ConnectClicked(func(checked bool) {
-		changeWindow(widget, getStartWidget())
+		changeWindow(widget, getHomepageWidget())
 	})
 	layout.AddWidget(backBtn, 0, 0)
 

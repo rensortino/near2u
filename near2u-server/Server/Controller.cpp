@@ -517,7 +517,7 @@
 
 		std::string code_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
 
-		std::string query = "select Misure.code,Misure.misura,Misure.time from Misure join Dispositivo_Ambiente on Misure.code = Dispositivo_Ambiente.code where cod_ambiente = '"+code_ambiente+"';";
+		std::string query = "select Misure.code,Misure.misura,Misure.time from Misure join Dispositivo on Misure.code = Dispositivo.code where cod_ambiente = '"+code_ambiente+"';";
 		
 		sql::ResultSet  *res = MYSQL::Select_Query(query);
 
@@ -608,5 +608,50 @@
         MQTTClient_destroy(&client);
 
 	}
+
+	Json::Value Controller::Associa_Utente(Json::Value data){
+
+		Json::Value response;
+		User * Current_User = Controller::Auth(data["auth"].asString());
+		
+		if(Current_User == nullptr || Current_User->getAdmin() == false){
+			response["status"] = "Failed";
+			response["error"] = "Unauthorized";
+			response["data"] = "";
+			return response;
+		}
+		std::string code_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
+		Ambiente * ambiente = Current_User->getAmbiente(code_ambiente);
+		if(ambiente == nullptr){
+			response["status"] = "Failed";
+			response["error"] = "Ambiente not found";
+			response["data"] = "";
+			return response;
+		}
+		std::string query = "insert into Ambiente_User (cod_ambiente,User_email) values ('"+ code_ambiente +"','"+data["data"]["user"].asString()+"');";
+		if(MYSQL::Query(query) != 0){
+			response["status"] = "Failed";
+			response["error"] = "User not found or ambiente already assiociated";
+			response["data"] = "";
+			return response;
+		}
+
+		for(User * user : users){
+			if (user->getemail().compare(data["data"]["user"].asString()) == 0){
+				if(user->getAmbiente(code_ambiente) == nullptr){
+					user->getAmbienti()->push_back(ambiente);
+				}
+			}
+		}
+		response["status"] = "Successful";
+		response["error"] = "";
+		response["data"] = "Ambiente associated";
+		return response;
+		
+		}
+
+		
+		
+
 	
 
