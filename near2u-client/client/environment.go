@@ -3,8 +3,6 @@ package client
 import (
 	"../utils"
 	"fmt"
-	"image"
-	"image/png"
 	"log"
 	"os"
 	"strconv"
@@ -24,9 +22,10 @@ var deviceList []interface{} // used list of interfaces to implement polymorphis
 var deviceToDelete []int
 
 func (e * Environment) GetSensorsList(resCh chan string, errCh chan string) {
+	e.SensorMap = make(map[string]Sensor)
 
 	data := struct {
-		EnvName string `json:"envname"`
+		EnvName string `json:"envcode"`
 		Type string `json:"type"`
 	}{
 		e.Name,
@@ -68,8 +67,10 @@ func (e * Environment) GetSensorsList(resCh chan string, errCh chan string) {
 
 func (e * Environment) GetActuatorList(resCh chan string, errCh chan string) {
 
+	e.ActuatorMap = make(map[string]Actuator)
+
 	data := struct {
-		EnvName string `json:"envname"`
+		EnvName string `json:"envcode"`
 		Type string `json:"type"`
 	}{
 		e.Name,
@@ -235,7 +236,7 @@ func (e * Environment) Done(operation string, resCh, errCh chan string) {
 
 		data := struct {
 			Devices []interface{} `json:"devices"`
-			EnvName string   `json:"envname"`
+			EnvName string   `json:"envcode"`
 		}{
 			deviceList,
 			e.Name,
@@ -250,7 +251,7 @@ func (e * Environment) Done(operation string, resCh, errCh chan string) {
 
 		data := struct {
 			Devices []int `json:"devices"`
-			EnvName string   `json:"envname"`
+			EnvName string   `json:"envcode"`
 		}{
 			deviceToDelete,
 			e.Name,
@@ -298,7 +299,7 @@ func (e * Environment) SendCommand(code, command string, resCh, errCh chan strin
 func (e * Environment) GetHistoryData(resCh chan [] * Measurement, errCh chan string)  {
 
 	data := struct {
-		EnvName string `json:"envname"`
+		EnvName string `json:"envcode"`
 	} {
 		e.Name,
 	}
@@ -339,18 +340,21 @@ func (e * Environment) GetHistoryData(resCh chan [] * Measurement, errCh chan st
 	}
 }
 
-func (e * Environment) GetPlot() image.Image {
+/*
+func (e * Environment) GetPlot(cod string) {
 
-	plotFile, err := os.Open("grafico.png")
+
+	cmd := exec.Command("Rscript /home/onestasimone/Desktop/near2u/near2u-client/plot.R " + cod)
+	err := cmd.Run()
 	if err != nil {
-		log.Fatalln("Error opening plot file")
+		log.Fatal(err)
 	}
-	defer plotFile.Close()
+	log.Printf("Waiting for command to finish...")
+	err = cmd.Wait()
+	log.Printf("Command finished with error: %v", err)
+	cmd = exec.Command(" xdg-open", "/home/onestasimone/Desktop/near2u/near2u-client/grafico.png")
+	cmd.Start()
 
-	img, err := png.Decode(plotFile)
-	if err != nil {
-		log.Fatalln("Error decoding image")
-	}
-
-	return img
 }
+
+ */

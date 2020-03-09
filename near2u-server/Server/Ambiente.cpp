@@ -16,24 +16,14 @@
     std::list<Dispositivo *> * Ambiente::getDispositivi(){
         return &dispositivi;
     }
-    void Ambiente::addSensore(int code, std::string& nome, std::string& tipo){
-
-        Sensore sensore(code,nome,tipo);
-        dispositivi.push_back(&sensore);
-
-    }
 
 
     void Ambiente::deleteDispositivo(int cod_dispositivo){
 
-         for(Dispositivo * dispositivo : dispositivi){
-            if(dispositivo->getCodice() == cod_dispositivo){
-                delete dispositivo;
-                dispositivi.remove(dispositivo);
-                    
-            }
-        }
-
+         Dispositivo * dispositivo = getDispositivo(cod_dispositivo);
+         delete dispositivo;
+         dispositivi.remove(dispositivo);
+            
         
     }
 

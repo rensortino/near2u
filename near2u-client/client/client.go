@@ -47,6 +47,7 @@ func SetCurrentEnv(currentEnv * Environment, name string) {
 // Gets an array of Environment IDs from the server, to be displayed on the GUI for selection
 func (c *Client) GetEnvList(envNameCh chan string, errCh chan string) {
 
+
 	res := utils.SocketCommunicate("visualizza_ambienti", c.LoggedUser.Auth, nil)
 
 	if res["status"] == "Failed" {
@@ -100,7 +101,7 @@ func (c *Client) StopGettingData(topic string, rtCh chan interface{}, quit chan 
 func (c *Client) GetTopicAndUri(envName string, topicCh, uriCh, errCh chan string) {
 
 	data := struct {
-		Name string `json:"name"`
+		Name string `json:"envcode"`
 	}{
 		envName,
 	}
@@ -130,7 +131,7 @@ func (c *Client) CreateEnv(envName string, currentEnv * Environment, resCh, errC
 	res := utils.SocketCommunicate("crea_ambiente", c.LoggedUser.Auth, data)
 
 	if res["status"] == "Successful" {
-		SetCurrentEnv(currentEnv, envName)
+		SetCurrentEnv(currentEnv, res["data"].(map[string]interface{})["code"].(string))
 		resCh <- res["status"].(string)
 		return
 	} else {
@@ -143,7 +144,7 @@ func (c *Client) CreateEnv(envName string, currentEnv * Environment, resCh, errC
 func (c *Client) DeleteEnv(envName string, currentEnv * Environment, resCh, errCh chan string) {
 
 	data := struct {
-		Name string `json:"envname"`
+		Name string `json:"envcode"`
 	}{
 		envName,
 	}
@@ -167,7 +168,7 @@ func (c *Client) DeleteEnv(envName string, currentEnv * Environment, resCh, errC
 func (c * Client) AssociateUser(envName, email string, resCh, errCh chan string) {
 
 	data := struct {
-		Name string `json:"envname"`
+		Name string `json:"envcode"`
 		User string `json:"user"`
 	}{
 		envName,

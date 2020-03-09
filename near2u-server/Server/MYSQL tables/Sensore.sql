@@ -1,4 +1,4 @@
-create table Sensore (
+CREATE TABLE Sensore (
 
 code int,
 FOREIGN KEY (code) References Dispositivo (code) on delete cascade on update cascade,

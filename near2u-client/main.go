@@ -277,6 +277,7 @@ func getConfigureEnvWidget() *qt.QWidget {
 	envListCB.SetEditable(false)
 
 	getEnvList(envListCB)
+
 	layout.AddWidget(envListCB, 0, 0)
 
 	addDevBtn := qt.NewQPushButton2("Add Devices", nil)
@@ -295,15 +296,16 @@ func getConfigureEnvWidget() *qt.QWidget {
 	})
 	layout.AddWidget(addDevBtn, 0, 0)
 
-	addUsrBtn := qt.NewQPushButton2("Add Devices", nil)
+	addUsrBtn := qt.NewQPushButton2("Delete Devices", nil)
 	addUsrBtn.ConnectClicked(func(checked bool) {
+		client.SetCurrentEnv(currentEnv, envListCB.CurrentText())
 		resCh := make(chan string)
 		errCh := make(chan string)
 		go currentEnv.GetDevicesList(resCh, errCh)
 		select {
 		case res := <- resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-			changeWindow(widget, getSelectDeviceTypeWidget())
+			changeWindow(widget, getDeleteDevicesWidget())
 		case err := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
@@ -481,6 +483,12 @@ func getSelectDeviceTypeWidget() *qt.QWidget {
 	})
 	layout.AddWidget(addActuatorBtn, 0, 0)
 
+	backBtn := qt.NewQPushButton2("Back", nil)
+	backBtn.ConnectClicked(func(checked bool) {
+		changeWindow(widget, getHomepageWidget())
+	})
+	layout.AddWidget(backBtn, 0, 0)
+
 	return widget
 }
 
@@ -577,10 +585,10 @@ func getAddSensorActuatorWidget(addActuator bool) *qt.QWidget {
 		select {
 		case res := <-resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-			changeWindow(widget, getHomepageWidget())
+			changeWindow(widget, getSelectDeviceTypeWidget())
 		case err := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-			changeWindow(widget, getHomepageWidget())
+			changeWindow(widget, getSelectDeviceTypeWidget())
 		}
 	})
 	layout.AddWidget(doneBtn, 0, 0)
@@ -715,7 +723,7 @@ func getDeviceList(devicesCB * qt.QComboBox) {
 	}
 }
 
-func getDeleteSensorsWidget() *qt.QWidget {
+func getDeleteDevicesWidget() *qt.QWidget {
 
 	layout := qt.NewQVBoxLayout()
 
@@ -848,7 +856,18 @@ func getVisualizeHistoryWidget(history [] * client.Measurement) *qt.QWidget {
 
 	widget := qt.NewQWidget(nil, 0)
 	widget.SetLayout(layout)
+	/*
+	devicesCB := qt.NewQComboBox(nil)
+	devicesCB.SetEditable(false)
 
+	getDeviceList(devicesCB)
+	layout.AddWidget(devicesCB, 0, 0)
+	code := qt.NewQLineEdit(nil)
+	code.SetPlaceholderText("Code sensor to plot")
+	layout.AddWidget(code, 0, 0)
+
+	
+	 */
 	dataList := qt.NewQListWidget(nil)
 	dataList.AddItem(fmt.Sprintf("Code\tValue\tTimestamp\n"))
 
@@ -857,7 +876,14 @@ func getVisualizeHistoryWidget(history [] * client.Measurement) *qt.QWidget {
 	}
 
 	layout.AddWidget(dataList, 0, 0)
+/*
+	plotBtn := qt.NewQPushButton2("Plot", nil)
+	plotBtn.ConnectClicked(func(checked bool) {
+		currentEnv.GetPlot(code.Text())
+	})
+	layout.AddWidget(plotBtn, 0, 0)
 
+ */
 	backBtn := qt.NewQPushButton2("Back", nil)
 	backBtn.ConnectClicked(func(checked bool) {
 		changeWindow(widget, getHomepageWidget())

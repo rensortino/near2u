@@ -194,7 +194,7 @@
 			return response;
 		}
 			User_mutex.lock_shared();
-			std::string cod_ambiente = Current_User ->getemail() + data["data"]["name"].asString();
+			std::string cod_ambiente = data["data"]["envcode"].asString();
 			Ambiente * ambiente = Current_User->getAmbiente(cod_ambiente);
 			if(ambiente != nullptr){
 				response["status"] = "Successful";
@@ -231,14 +231,14 @@
 			response["data"] = "";
 			return response;
 		}
-		std::string cod_ambiente = Current_User ->getemail() + data["data"]["name"].asString();
+		std::string cod_ambiente = Current_User ->getemail() + "_" + data["data"]["name"].asString();
 		std::string name = data["data"]["name"].asString();
 
 		
 		std::string query = "call Ambiente_insert ('"+name +"','"+ Current_User->getemail() + "','"+ cod_ambiente+"');";
 		
 		if (MYSQL::Query(query) == 0){
-				response["data"]["name"] = name;
+				response["data"]["code"] = cod_ambiente;
 				response["status"] = "Successful";
 				response["error"] = "";
 				Controller::User_mutex.lock();
@@ -266,7 +266,7 @@
 			response["data"] = "";
 			return response;
 		}
-		std::string cod_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
+		std::string cod_ambiente =  data["data"]["envcode"].asString();
 		auto entriesArray = data["data"]["devices"];
 		Json::Value::iterator devices_to_add;
 		std::string start_transaction = "START TRANSACTION;";
@@ -353,7 +353,7 @@
 		int i = 0;
 		for(ambienti_iterator = ambienti->begin();ambienti_iterator != ambienti->end();ambienti_iterator ++) {	
 				
-			response["data"]["environments"][i] = (*ambienti_iterator)->getNome();
+			response["data"]["environments"][i] = (*ambienti_iterator)->getcodAmbiente();
 			i++;
     	}
         response["status"] = "Successful";
@@ -373,7 +373,7 @@
 			response["data"] = "";
 			return response;
 		}
-		std::string cod_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
+		std::string cod_ambiente = data["data"]["envcode"].asString();
 		int i = 0;
 		Ambiente * ambiente = Current_User->getAmbiente(cod_ambiente);
 		if(ambiente == nullptr){
@@ -432,7 +432,7 @@
 			return response;
 		}
 
-		std::string cod_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
+		std::string cod_ambiente =  data["data"]["envcode"].asString();
 		int i = 0;
 		Ambiente * ambiente = Current_User->getAmbiente(cod_ambiente);
 		if(ambiente == nullptr){
@@ -485,7 +485,7 @@
 			return response;
 		}
 
-		std::string code_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
+		std::string code_ambiente = data["data"]["envcode"].asString();
 		int code = data["data"]["code"].asInt();
 		std::string comando = data["data"]["command"].asString();
 
@@ -515,7 +515,7 @@
 			return response;
 		}
 
-		std::string code_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
+		std::string code_ambiente = data["data"]["envcode"].asString();
 
 		std::string query = "select Misure.code,Misure.misura,Misure.time from Misure join Dispositivo on Misure.code = Dispositivo.code where cod_ambiente = '"+code_ambiente+"';";
 		
@@ -553,17 +553,17 @@
 			response["data"] = "";
 			return response;
 		}
-		std::string code_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
+		std::string code_ambiente =  data["data"]["envcode"].asString();
 		std::string query = "delete from Ambiente where cod_ambiente = '" + code_ambiente +"'";
 		if(Current_User->eliminaAmbiente(code_ambiente) && MYSQL::Query(query) == 0){
 			MQTTClient_unsubscribe(client, code_ambiente.c_str());
 			response["status"] = "Successful";
 			response["error"] = "";
-			response["data"] = "Ambiente "+ data["data"]["envname"].asString() +" deleted";
+			response["data"] = "Ambiente "+ data["data"]["encode"].asString() +" deleted";
 		}
 		else {
 			response["status"] = "Failed";
-			response["error"] = "Ambiente "+ data["data"]["envname"].asString() +" not found";
+			response["error"] = "Ambiente "+ data["data"]["envcode"].asString() +" not found";
 			response["data"] = "";
 		}
 
@@ -620,7 +620,7 @@
 			response["data"] = "";
 			return response;
 		}
-		std::string code_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
+		std::string code_ambiente =  data["data"]["envcode"].asString();
 		Ambiente * ambiente = Current_User->getAmbiente(code_ambiente);
 		if(ambiente == nullptr){
 			response["status"] = "Failed";

@@ -1,4 +1,4 @@
-create table Ambiente (
+CREATE TABLE Ambiente (
 name varchar(30) NOT NULL,  
 cod_ambiente varchar(40) not null  ,
 primary key (cod_ambiente)

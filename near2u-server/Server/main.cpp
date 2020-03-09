@@ -39,7 +39,7 @@ int main(){
   sockaddr.sin_port = htons(3333);
 
   if (bind(sockfd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
-    std::cout << "Failed to bind to port 333. errno: " << errno << std::endl;
+    std::cout << "Failed to bind to port 3333 errno: " << errno << std::endl;
     exit(EXIT_FAILURE);
   }
 
