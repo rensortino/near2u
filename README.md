@@ -2,7 +2,7 @@
 
 Near2U is a user application to help you interact with your IoT platform of sensors and actuators, using the MQTT protocol.
 
-![](/Documentazione/image/architetturaNear2U.jpeg)
+![](Documentazione/image/architetturaNear2U.jpeg)
 ## Installation
 
 ### Install the dependencies used in the client for GUI and for interaction with MQTT functionalities.
