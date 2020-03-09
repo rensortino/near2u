@@ -7,18 +7,10 @@
 #include "Sensore.h"
 
 
-Sensore::Sensore(int codice, std::string nome,std::string tipo){
-    codSensore = codice;
-    name = nome;
-    type = tipo;
+Sensore::Sensore(int code, std::string& name,std::string& type) : Dispositivo(type,name,code){
 }
 
-int Sensore::getCodSensore(){
-    return codSensore;
-}
-std::string Sensore::getName(){
-    return name;
-}
-std::string Sensore::getType(){
-    return type;
+device_type Sensore::get_device_type(){
+    return sensore;
+
 }

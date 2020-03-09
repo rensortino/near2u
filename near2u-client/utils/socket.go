@@ -1,14 +1,15 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"log"
 	"net"
 	"strconv"
 	"strings"
 )
 
-// TODO Make dynamic
 var (
 	ip   = "127.0.0.1"
 	port = 3333
@@ -61,25 +62,16 @@ func socketSend(conn net.Conn, jsonReq []byte) {
 	errorCheck(err, "Couldn't send data")
 }
 
-// TODO Handle messages bigger than buffer
 func socketReceive(conn net.Conn) []byte {
-	buff := make([]byte, 8192) // Buffered reads from socket
-	for {
-		n, err := conn.Read(buff)
-		if err != nil && err.Error() == "EOF" {
-			log.Println("EOF Reached, breaking loop")
-			return []byte("EOF")
-		}
-		errorCheck(err, "Error receiving data")
-		log.Printf("Receive: %s\n", buff[:n])
-		return buff[:n]
-	}
-	return []byte("EOF")
+	var buf bytes.Buffer
+	_, err := io.Copy(&buf, conn)
+	errorCheck(err, "Error receiving data")
+	log.Printf("Receive: %v\n", buf.String())
+	return buf.Bytes()
 }
 
 // Accepts request parameters, returns JSON as map[string]interface{} on the channel
-// TODO substitute channel with return value
-func SocketCommunicate(function, auth string, data interface{}, rx chan map[string]interface{}) {
+func SocketCommunicate(function, auth string, data interface{}) map[string]interface{} {
 
 	conn := socketConnect(ip, port)
 	defer conn.Close()
@@ -99,6 +91,6 @@ func SocketCommunicate(function, auth string, data interface{}, rx chan map[stri
 		eof := []byte(`{"status":"EOF reached"}`)
 		json.Unmarshal(eof, &jsonRes)
 	}
-	rx <- jsonRes
-	close(rx)
+	return jsonRes
 }
+

@@ -1,54 +1,71 @@
 package utils
 
-func Login(responseMsg, token chan string, email, password string) {
+type User struct {
+	Auth string
+	IsAdmin bool
+}
+
+func Login(resCh, errCh chan string, loggedUser chan * User, email, password string) {
 
 	data := struct {
-		Email string
+		Email    string
 		Password string
-	} {
+	}{
 		email,
 		password,
 	}
 
-	rx := make(chan map[string]interface{})
-	go SocketCommunicate("login", "", data, rx)
+	res := SocketCommunicate("login", "", data)
 
-	res := <- rx // res has type map[string]interface{}
-
-	if res["status"] == "Succesfull" {
+	if res["status"] == "Successful" {
 		// Accesses nested json
-		token <- res["data"].(map[string]interface{})["auth"].(string)
-		responseMsg <- "User Authenticated"
-	}else {
-		token <- "NULL"
-		responseMsg <- res["error"].(string)
+		usr := &User{
+			res["data"].(map[string]interface{})["auth"].(string),
+			res["data"].(map[string]interface{})["admin"].(bool),
+		}
+		if usr.IsAdmin {
+			resCh <- "Admin Authenticated"
+		} else {
+			resCh <- "User Authenticated"
+		}
+		loggedUser <- usr
+	} else {
+		errCh <- res["error"].(string)
 	}
 
 }
 
-func Register(responseMsg chan string, name, surname, email, password string)  {
+func (u * User) Logout(resCh, errCh chan string) {
+
+	res := SocketCommunicate("logout", u.Auth, nil)
+
+	if res["status"] == "Successful" {
+		// Accesses nested json
+		resCh <- "User Logout"
+	} else {
+		errCh <- res["error"].(string)
+	}
+}
+
+func Register(responseMsg chan string, name, surname, email, password string) {
 
 	newUser := struct {
-		Name string `json:"name"`
-		Surname string `json:"surname"`
-		Email string `json:"email"`
+		Name     string `json:"name"`
+		Surname  string `json:"surname"`
+		Email    string `json:"email"`
 		Password string `json:"password"`
-	} {
+	}{
 		name,
 		surname,
 		email,
 		password,
 	}
 
-	rx := make(chan map[string]interface{})
+	res := SocketCommunicate("register", "", newUser)
 
-	go SocketCommunicate("register", "", newUser, rx)
-
-	res := <- rx
-
-	if res["status"] == "Succesfull" {
+	if res["status"] == "Successful" {
 		responseMsg <- "User Registered"
-	}else {
+	} else {
 		responseMsg <- res["error"].(string)
 	}
 }

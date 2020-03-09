@@ -1,6 +1,6 @@
 #ifndef SERVER_SENSORE_H
 #define SERVER_SENSORE_H
-
+#include "Dispositivo.hpp"
 #include <string>
 #include <vector>
 #include <list>
@@ -8,17 +8,12 @@
 #include <assert.h>
 
 
-class Sensore
+class Sensore : public Dispositivo
 {
 public:
-	Sensore(int cod, std::string nome, std::string tipo);
-	int getCodSensore();
-	std::string getName();
-	std::string getType();
-private:
-	int codSensore;
-	std::string type;
-	std::string name;
+	Sensore(int cod, std::string& name, std::string& type);
+
+	device_type get_device_type();
 
 };
 
