@@ -162,3 +162,26 @@ func (c *Client) DeleteEnv(envName string, currentEnv * Environment, resCh, errC
 		return
 	}
 }
+
+// Used by admin to associate a user to an existing environment
+func (c * Client) AssociateUser(envName, email string, resCh, errCh chan string) {
+
+	data := struct {
+		Name string `json:"envname"`
+		User string `json:"user"`
+	}{
+		envName,
+		email,
+	}
+
+	res := utils.SocketCommunicate("associa_utente", c.LoggedUser.Auth, data)
+
+	if res["status"] == "Successful" {
+		resCh <- res["status"].(string)
+		return
+	} else {
+		errCh <- res["error"].(string)
+		close(errCh)
+		return
+	}
+}

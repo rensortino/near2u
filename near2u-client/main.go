@@ -88,6 +88,12 @@ func getHomepageWidget() *qt.QWidget {
 			changeWindow(widget, getConfigureEnvWidget())
 		})
 		layout.AddWidget(confEnvBtn, 0, 0)
+
+		addUsrBtn := qt.NewQPushButton2("Associate User", nil)
+		addUsrBtn.ConnectClicked(func(checked bool) {
+			changeWindow(widget, getAssociateUserWidget())
+		})
+		layout.AddWidget(addUsrBtn, 0, 0)
 	}
 
 	sendCmdBtn := qt.NewQPushButton2("Send Command", nil)
@@ -158,7 +164,7 @@ func getLoginWidget() *qt.QWidget {
 
 	backBtn := qt.NewQPushButton2("Back", nil)
 	backBtn.ConnectClicked(func(checked bool) {
-		changeWindow(widget, getHomepageWidget())
+		changeWindow(widget, getStartWidget())
 	})
 	layout.AddWidget(backBtn, 0, 0)
 
@@ -213,7 +219,7 @@ func getRegisterWidget() *qt.QWidget {
 
 	backBtn := qt.NewQPushButton2("Back", nil)
 	backBtn.ConnectClicked(func(checked bool) {
-		changeWindow(widget, getHomepageWidget())
+		changeWindow(widget, getStartWidget())
 	})
 	layout.AddWidget(backBtn, 0, 0)
 
@@ -273,8 +279,8 @@ func getConfigureEnvWidget() *qt.QWidget {
 	getEnvList(envListCB)
 	layout.AddWidget(envListCB, 0, 0)
 
-	addBtn := qt.NewQPushButton2("Add Devices", nil)
-	addBtn.ConnectClicked(func(checked bool) {
+	addDevBtn := qt.NewQPushButton2("Add Devices", nil)
+	addDevBtn.ConnectClicked(func(checked bool) {
 		client.SetCurrentEnv(currentEnv, envListCB.CurrentText())
 		resCh := make(chan string)
 		errCh := make(chan string)
@@ -287,23 +293,22 @@ func getConfigureEnvWidget() *qt.QWidget {
 			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
 	})
-	layout.AddWidget(addBtn, 0, 0)
+	layout.AddWidget(addDevBtn, 0, 0)
 
-	delBtn := qt.NewQPushButton2("Delete Devices", nil)
-	delBtn.ConnectClicked(func(checked bool) {
-		client.SetCurrentEnv(currentEnv, envListCB.CurrentText())
+	addUsrBtn := qt.NewQPushButton2("Add Devices", nil)
+	addUsrBtn.ConnectClicked(func(checked bool) {
 		resCh := make(chan string)
 		errCh := make(chan string)
 		go currentEnv.GetDevicesList(resCh, errCh)
 		select {
 		case res := <- resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-			changeWindow(widget, getDeleteSensorsWidget())
+			changeWindow(widget, getSelectDeviceTypeWidget())
 		case err := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
 	})
-	layout.AddWidget(delBtn, 0, 0)
+	layout.AddWidget(addUsrBtn, 0, 0)
 
 	backBtn := qt.NewQPushButton2("Back", nil)
 	backBtn.ConnectClicked(func(checked bool) {
@@ -313,6 +318,46 @@ func getConfigureEnvWidget() *qt.QWidget {
 
 	return widget
 
+}
+
+func getAssociateUserWidget() *qt.QWidget {
+
+	layout := qt.NewQVBoxLayout()
+
+	widget := qt.NewQWidget(nil, 0)
+	widget.SetLayout(layout)
+
+	email := qt.NewQLineEdit(nil)
+	email.SetPlaceholderText("User Email")
+	layout.AddWidget(email, 0, 0)
+
+	env := qt.NewQLineEdit(nil)
+	env.SetPlaceholderText("Environment")
+	layout.AddWidget(env, 0, 0)
+
+	addUsrBtn := qt.NewQPushButton2("Associate User and Environment", nil)
+	addUsrBtn.ConnectClicked(func(checked bool) {
+
+		resCh := make(chan string)
+		errCh := make(chan string)
+		go clientInstance.AssociateUser(resCh, errCh, env.Text(), email.Text())
+		select {
+		case res := <- resCh:
+			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+			changeWindow(widget, getHomepageWidget())
+		case err := <- errCh:
+			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
+		}
+	})
+	layout.AddWidget(addUsrBtn, 0, 0)
+
+	backBtn := qt.NewQPushButton2("Back", nil)
+	backBtn.ConnectClicked(func(checked bool) {
+		changeWindow(widget, getStartWidget())
+	})
+	layout.AddWidget(backBtn, 0, 0)
+
+	return widget
 }
 
 func getAddDelEnvWidget() *qt.QWidget {
