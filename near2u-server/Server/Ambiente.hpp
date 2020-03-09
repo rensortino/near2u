@@ -22,7 +22,6 @@ class Ambiente
 	std::string& getNome();
 	std::string& getcodAmbiente();
 	std::list<Dispositivo *> *  getDispositivi();
-	void addSensore(int code, std::string& nome, std::string& tipo);
 	void deleteDispositivo(int cod_dispositivo);
 	void addDispositivo(int code, std::string& nome, std::string& tipo, std::list<std::string> * commands);
 	Dispositivo * getDispositivo(int code);
