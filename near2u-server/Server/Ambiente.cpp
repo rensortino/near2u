@@ -118,18 +118,6 @@
         }
         dispositivi.clear();
     }
-    Sensore * Ambiente::getSensore(int cod_sensore){
-        std::list<Sensore>::iterator sensori_iterator;
-
-        for(sensori_iterator=sensori.begin(); sensori_iterator != sensori.end(); sensori_iterator ++){
-            if((*sensori_iterator).getCodSensore() == cod_sensore){
-                return &(*sensori_iterator);
-            }
-        }
-        return nullptr;
-
-
-    }
 
 
   

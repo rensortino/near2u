@@ -1,22 +1,8 @@
 
 #include "Thread_Pool.hpp"
 
-<<<<<<< HEAD
-    enum StringValue { Default,
-                        Register, 
-                        Login, 
-                        Topic_Ambiente,
-                        Configura_Ambiente,
-                        Inserisci_Sensori,
-                        Visualizza_Ambienti,
-                        Visualizza_Sensori,
-                        Elimina_Sensori
-                        };
-    static std::map<std::string, StringValue> s_mapStringValues;
-=======
     
    
->>>>>>> Iterazione_3
 
     static void Initialize();
 
@@ -119,15 +105,6 @@
             case Associa_Utente:
                 response = controller->Associa_Utente(requestjson).toStyledString();
                 break;
-            case Visualizza_Ambienti:
-                response = controller->Visualizza_Ambienti(requestjson).toStyledString();
-                break;
-            case Visualizza_Sensori:
-                response = controller->Visualizza_Sensori(requestjson).toStyledString();
-                break;
-                case Elimina_Sensori:
-                response = controller->Elimina_sensori(requestjson).toStyledString();
-                break;
             default:
                 response = "{\"status\" : \"Service not avaible\"}"; 
                 break;
@@ -143,17 +120,6 @@
     s_mapStringValues["register"] = Register;
     s_mapStringValues["login"] = Login;
     s_mapStringValues["topic_ambiente"] = Topic_Ambiente;
-<<<<<<< HEAD
-    s_mapStringValues["configura_ambiente"] = Configura_Ambiente;
-    s_mapStringValues["inserisci_sensori"] = Inserisci_Sensori;
-    s_mapStringValues["visualizza_ambienti"] = Visualizza_Ambienti;
-    s_mapStringValues["visualizza_sensori"] = Visualizza_Sensori;
-    s_mapStringValues["elimina_sensori"] = Elimina_Sensori;
-    
-    std::cout << "s_mapStringValues contains " 
-        << s_mapStringValues.size() 
-        << " entries." << std::endl;
-=======
     s_mapStringValues["crea_ambiente"] = Crea_Ambiente;
     s_mapStringValues["inserisci_dispositivi"] = Inseresci_Dispositivi;
     s_mapStringValues["visualizza_ambienti"] = Visualizza_Ambienti;
@@ -164,5 +130,4 @@
     s_mapStringValues["elimina_ambiente"] = Elimina_Ambiente;
     s_mapStringValues["logout"] = Logout;
     s_mapStringValues["associa_utente"] = Associa_Utente;
->>>>>>> Iterazione_3
     }

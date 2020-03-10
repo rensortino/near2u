@@ -287,21 +287,12 @@ func getConfigureEnvWidget() *qt.QWidget {
 		errCh := make(chan string)
 		go currentEnv.GetDevicesList(resCh, errCh)
 		select {
-<<<<<<< HEAD
-		case env := <- envCh:
-			//currentEnv = env
-			changeWindow(widget, getAddSensorsWidget(env))
-		case err := <- errCh:
-			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-			}
-=======
 		case res := <- resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 			changeWindow(widget, getSelectDeviceTypeWidget())
 		case err := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
->>>>>>> Iterazione_3
 	})
 	layout.AddWidget(addDevBtn, 0, 0)
 
@@ -590,11 +581,7 @@ func getAddSensorActuatorWidget(addActuator bool) *qt.QWidget {
 
 		resCh := make(chan string)
 		errCh := make(chan string)
-<<<<<<< HEAD
-		go clientInstance.Done(newEnv.Name, "inserisci_sensori", sensorList, resCh, errCh)
-=======
 		go currentEnv.Done("add", resCh, errCh)
->>>>>>> Iterazione_3
 		select {
 		case res := <-resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
@@ -657,10 +644,6 @@ func getSendCommandWidget() *qt.QWidget {
 			devicesCB.SetVisible(true)
 			selActBtn.SetVisible(true)
 
-<<<<<<< HEAD
-	sensorsCh := make (chan []client.Sensor)
-	errCh := make (chan string)
-=======
 		case err := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		}
@@ -720,22 +703,11 @@ func getSendCommandWidget() *qt.QWidget {
 func getDeviceList(devicesCB * qt.QComboBox) {
 	resCh := make(chan string)
 	errCh := make(chan string)
->>>>>>> Iterazione_3
 
 	// Gets all environments from server and shows them in a combo box
 	go currentEnv.GetDevicesList(resCh, errCh)
 
 	select {
-<<<<<<< HEAD
-	case sensors := <- sensorsCh:
-		for _, sensor := range sensors {
-			sensorName := sensor.Name
-			// TODO Check validity
-			sensorsCB.AddItem(sensorName, nil)
-		}
-	case error := <- errCh:
-		qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-=======
 	case <- resCh:
 		tmp := make([]string, 0)
 		for _, value := range currentEnv.SensorMap {
@@ -748,7 +720,6 @@ func getDeviceList(devicesCB * qt.QComboBox) {
 
 	case err := <-errCh:
 		qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
->>>>>>> Iterazione_3
 	}
 }
 
@@ -789,40 +760,19 @@ func getDeleteDevicesWidget() *qt.QWidget {
 		errCh := make(chan string) // Stores the error message, in case of failed request
 		go currentEnv.DeleteActuator(code.Text(), resCh, errCh)
 		select {
-<<<<<<< HEAD
-		case sensor := <-sensorCh:
-			//TODO Change sensor to sensor.(*client.Sensor).Name
-			successString := fmt.Sprintf("Sensor: %s Selected for deletion", sensor)
-			qt.QMessageBox_Information(nil, "OK", successString, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-		case error := <-errCh:
-			qt.QMessageBox_Information(nil, "Error", error, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
-=======
 		case res := <-resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
 		case err := <-errCh:
 			qt.QMessageBox_Information(nil, "Error", err, qt.QMessageBox__Ok, qt.QMessageBox__Ok)
->>>>>>> Iterazione_3
 		}
 	})
 	layout.AddWidget(addActBtn, 0, 0)
 
 	doneBtn := qt.NewQPushButton2("Done", nil)
 	doneBtn.ConnectClicked(func(checked bool) {
-<<<<<<< HEAD
-		sensorList := make([]client.Sensor, 0)
-		// Constructs the list to send to the server
-		for _, sensor := range env.SensorMap {
-			//TODO Sensor type must be Sensor
-			sensorList = append(sensorList, sensor.(client.Sensor))
-		}
-		resCh := make(chan string)
-		errCh := make(chan string)
-		go clientInstance.Done(env.Name, "elimina_sensori", sensorList, resCh, errCh)
-=======
 		resCh := make(chan string)
 		errCh := make(chan string)
 		go currentEnv.Done("delete", resCh, errCh)
->>>>>>> Iterazione_3
 		select {
 		case res := <-resCh:
 			qt.QMessageBox_Information(nil, "OK", res, qt.QMessageBox__Ok, qt.QMessageBox__Ok)

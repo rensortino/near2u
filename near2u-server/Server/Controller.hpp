@@ -31,13 +31,6 @@ public:
 	Json::Value Topic_Ambiente(Json::Value data);
 	Json::Value Register(Json::Value data);
 	Json::Value Login(Json::Value data);
-<<<<<<< HEAD
-	Json::Value Configura_ambiente(Json::Value data);
-	Json::Value Inserisci_Sensori(Json::Value data);
-	Json::Value Visualizza_Ambienti(Json::Value data);
-	Json::Value Visualizza_Sensori(Json::Value data);
-	Json::Value Elimina_sensori(Json::Value data);
-=======
 	Json::Value Crea_Ambiente(Json::Value data);
 	Json::Value Associa_Utente(Json::Value data);
 	Json::Value Visualizza_Ambienti(Json::Value data);
@@ -49,7 +42,6 @@ public:
 	Json::Value Elimina_Ambiente(Json::Value data);
 	Json::Value Logout(Json::Value data);
 	~Controller();
->>>>>>> Iterazione_3
 
 
 	

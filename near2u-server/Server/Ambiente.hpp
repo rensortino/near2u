@@ -17,13 +17,6 @@
 class Ambiente
 {
 	public:
-<<<<<<< HEAD
-	Ambiente( std::string name, std::string cod);
-	std::string getNome();
-	std::string getcodAmbiente();
-	std::list<Sensore> * getSensori();
-	Sensore * getSensore(int cod_sensore);
-=======
 	Ambiente( std::string& name, std::string& cod);
 	~Ambiente();
 	std::string& getNome();
@@ -33,7 +26,6 @@ class Ambiente
 	void addDispositivo(int code, std::string& nome, std::string& tipo, std::list<std::string> * commands);
 	Dispositivo * getDispositivo(int code);
 	bool inviaComando(int code_attuatore, std::string& comando);
->>>>>>> Iterazione_3
 private:
 
 	std::string Nome;

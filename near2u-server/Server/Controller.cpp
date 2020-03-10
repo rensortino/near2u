@@ -73,11 +73,7 @@
 		std::string query = "INSERT INTO User (name, surname, email, password,auth_token)\
                                 VALUES ('"+ data["name"].asString() + "','" + data["surname"].asString() + "','"+data["email"].asString()+"','"+data["password"].asString()+"','"+SHA_Crypto(data["email"].asString() + data["password"].asString())+"');";
 		if(MYSQL::Query(query) == 0){
-<<<<<<< HEAD
-			response["status"] = "Succesfull";
-=======
 			response["status"] = "Successful";
->>>>>>> Iterazione_3
 			response["data"]["name"] = data["name"].asString();
 			response["data"]["surname"] = data["surname"].asString();
 			response["data"]["email"] = data["email"].asString();
@@ -239,25 +235,12 @@
 		std::string name = data["data"]["name"].asString();
 
 		
-<<<<<<< HEAD
-		std::string query = "call Ambiente_insert ('"+data["data"]["name"].asString() +"','"+ Current_User->getemail() + "','"+ cod_ambiente+"');";
-		
-		
-
-		
-			if (MYSQL::Query(query) == 0){
-				response["data"]["name"] = data["data"]["name"].asString();
-				response["status"] = "Succesfull";
-				response["error"] = "";
-				Ambiente ambiente(data["data"]["name"].asString(),cod_ambiente);
-=======
 		std::string query = "call Ambiente_insert ('"+name +"','"+ Current_User->getemail() + "','"+ cod_ambiente+"');";
 		
 		if (MYSQL::Query(query) == 0){
 				response["data"]["code"] = cod_ambiente;
 				response["status"] = "Successful";
 				response["error"] = "";
->>>>>>> Iterazione_3
 				Controller::User_mutex.lock();
 				Current_User->addAmbiente(name,cod_ambiente);
 				Controller::User_mutex.unlock();
@@ -267,18 +250,6 @@
 				response["status"] = "Failed";
 				response["error"] = "Error in creating new Ambiente";
 			}
-<<<<<<< HEAD
-			else {
-				response["data"] = "";
-				response["status"] = "Failed";
-				response["error"] = "Error in creating new Ambiente";
-			}
-			
-		
-		
-
-=======
->>>>>>> Iterazione_3
 
 		return response;
 	}
@@ -295,45 +266,6 @@
 			response["data"] = "";
 			return response;
 		}
-<<<<<<< HEAD
-		std::string cod_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
-		 auto entriesArray = data["data"]["sensors"];
-		 Json::Value::iterator sensors_to_add;
-		 std::string start_transaction = "START TRANSACTION;";
-		 transaction.push_back(start_transaction);
-		 for (sensors_to_add = entriesArray.begin(); sensors_to_add != entriesArray.end();sensors_to_add ++){
-			
-			std::string query = "insert into Sensore (name,type,cod_sensore) values ('"+(*sensors_to_add)["name"].asString() +"','"+(*sensors_to_add)["kind"].asString() +"',"+std::to_string((*sensors_to_add)["code"].asInt()) + ");";
-			std::string query_1 = "insert into Sensore_Ambiente (cod_ambiente,cod_sensore) values ('"+ cod_ambiente +"',"+ std::to_string((*sensors_to_add)["code"].asInt())+");";
-			transaction.push_back(query);
-			transaction.push_back(query_1);
-		 }
-		 	std::string commit = "commit;";
-		 	transaction.push_back(commit);
-			
-			if (MYSQL::Queries(transaction) ==  true){
-				for (sensors_to_add = entriesArray.begin(); sensors_to_add != entriesArray.end();sensors_to_add ++){
-					Sensore sensore((*sensors_to_add)["code"].asInt(),(*sensors_to_add)["name"].asString(),(*sensors_to_add)["kind"].asString());
-					Controller::User_mutex.lock();
-					Ambiente * ambiente = Current_User->getAmbiente(cod_ambiente);
-					ambiente->getSensori()->push_back(sensore);
-					Controller::User_mutex.unlock();
-				}
-			}
-			else {
-				response["status"] = "Failed";
-				response["error"] = "Error in creating sensors ";
-				response["data"] = "";
-			}
-			 
-		
-		if (succes_flag == true){
-			response["status"] = "Succesfull";
-			response["error"] = "";
-			response["data"] = "insert completed";
-		}
-		 
-=======
 		std::string cod_ambiente =  data["data"]["envcode"].asString();
 		auto entriesArray = data["data"]["devices"];
 		Json::Value::iterator devices_to_add;
@@ -608,7 +540,6 @@
 				i++;
 			}
 			return response;
->>>>>>> Iterazione_3
 
 		}
 	}
@@ -664,154 +595,6 @@
 
 	}
 
-<<<<<<< HEAD
-	Json::Value Controller::Visualizza_Ambienti(Json::Value data){
-		Json::Value response;
-
-		User * Current_User = Controller::Auth(data["auth"].asString());
-
-		if(Current_User == nullptr || Current_User->getAdmin() == false){
-			response["status"] = "Failed";
-			response["error"] = "Unauthorized";
-			response["data"] = "";
-			return response;
-		}
-
-		std::string query = "select name from (Ambiente join Ambiente_User on Ambiente.cod_ambiente = Ambiente_User.cod_ambiente) where User_email = '"+Current_User->getemail() +"'; ";
-
-		sql::ResultSet *res = MYSQL::Select_Query(query);
-
-
-			if( res == nullptr || res->rowsCount() == 0 ){
-            response["status"] = "Failed";
-            response["error"] = "Ambienti not Found";
-        	}
-			else
-			
-			{
-				int i = 0;
-				while (res->next()) {	
-				
-					response["data"]["environments"][i] = (std::string) res->getString("name");
-					i++;
-            }
-            	response["status"] = "Succesfull";
-				
-			}
-			delete res;
-			return response;
-	}
-
-	Json::Value Controller::Visualizza_Sensori(Json::Value data){
-		Json::Value response;
-
-		User * Current_User = Controller::Auth(data["auth"].asString());
-		std::string cod_ambiente = Current_User ->getemail() + data["data"]["envname"].asString();
-		if(Current_User == nullptr || Current_User->getAdmin() == false){
-			response["status"] = "Failed";
-			response["error"] = "Unauthorized";
-			response["data"] = "";
-			return response;
-		}
-
-		std::string query = "select name,type,Sensore.cod_sensore from (Sensore_Ambiente join Sensore on Sensore.cod_sensore = Sensore_Ambiente.cod_sensore) where cod_ambiente = '"+ cod_ambiente +"'";
-
-		sql::ResultSet *res = MYSQL::Select_Query(query);
-
-
-			if( res == nullptr ){
-            response["status"] = "Failed";
-            response["error"] = "Error searching Sensors contact system Admin";
-			}
-			else if(res ->rowsCount() == 0){
-				response["status"] = "Succesfull";
-				response["data"]["sensors"]= Json::Value(Json::arrayValue);
-			}
-			else 
-			
-			{
-				int i = 0;
-				while (res->next()) {	
-					Json::Value sensor;
-					sensor["name"] =(std::string) res->getString("name");
-					sensor["kind"] = (std::string) res->getString("type");
-					sensor["code"] = res->getInt("cod_sensore");
-				
-					response["data"]["sensors"][i] = sensor;
-					i++;
-            }
-            	response["status"] = "Succesfull";
-				
-			}
-			delete res;
-			return response;
-		
-
-	}
-
-	Json::Value Controller::Elimina_sensori(Json::Value data){
-		Json::Value response;
-		std::list<std::string> transaction;
-		User * Current_User = Controller::Auth(data["auth"].asString());
-		bool succes_flag = true;
-
-		if(Current_User == nullptr || Current_User->getAdmin() == false){
-			response["status"] = "Failed";
-			response["error"] = "Unauthorized";
-			response["data"] = "";
-			return response;
-		}
-		std::string cod_ambiente = Current_User ->getemail() + data["data"]["envName"].asString();
-		 auto entriesArray = data["data"]["sensors"];
-		 Json::Value::iterator sensors_to_delete;
-		 std::string start_transaction = "START TRANSACTION;";
-		 transaction.push_back(start_transaction);
-		 for (sensors_to_delete = entriesArray.begin(); sensors_to_delete != entriesArray.end();sensors_to_delete ++){
-			
-			std::string query = "delete from Sensore where cod_sensore = "+std::to_string((*sensors_to_delete).asInt()) + ";";
-			transaction.push_back(query);
-		 }
-		 	std::string commit = "commit;";
-		 	transaction.push_back(commit);
-			
-			if (MYSQL::Queries(transaction) ==  true){
-				for (sensors_to_delete = entriesArray.begin(); sensors_to_delete != entriesArray.end();sensors_to_delete ++){
-					Controller::User_mutex.lock();
-					Ambiente * ambiente = Current_User->getAmbiente(cod_ambiente);
-					if(ambiente != nullptr){
-						std::list<Sensore>::iterator sensori_iterator;
-						for(sensori_iterator=ambiente->getSensori()->begin(); sensori_iterator != ambiente->getSensori()->end(); sensori_iterator ++){
-            				if((*sensori_iterator).getCodSensore() == (*sensors_to_delete).asInt()){
-               					ambiente->getSensori()->erase(sensori_iterator);
-								break;
-            				}
-        				}
-						
-			
-					}
-					
-					Controller::User_mutex.unlock();
-				}
-			}
-			else {
-				response["status"] = "Failed";
-				response["error"] = "Error in deleting sensors ";
-				response["data"] = "";
-			}
-			 
-		
-		if (succes_flag == true){
-			response["status"] = "Succesfull";
-			response["error"] = "";
-			response["data"] = "deletion completed";
-		}
-		 
-
-		 return response;
-	}
-
-
-=======
 	Controller::~Controller(){
 		User_mutex.lock();
 		std::list<User *>::iterator users_iterator;
@@ -825,7 +608,6 @@
         MQTTClient_destroy(&client);
 
 	}
->>>>>>> Iterazione_3
 
 	Json::Value Controller::Associa_Utente(Json::Value data){
 
