@@ -41,6 +41,17 @@ download from https://dev.mysql.com/downloads/connector/cpp/
 
 add -I dir_path/mysql-connector-c++-8.0.19-linux-glibc2.12-x86-64bit/include/jdbc as compile flag substitute dir_path with the correct path
 
+install boost library
+```bash
+sudo apt-get install libboost-all-dev
+```
+install mysqlconn library
+
+```bash
+sudo apt-get -y install libmysqlcppconn-dev
+```
+add -lmysqlcppconn as compile flag
+
 add -pthread as compile flag
 
 add -std=c17++ as compile flag for shared_mutex
@@ -130,6 +141,14 @@ comando varchar(30) NOT NULL,
 cod_attuatore int,
 FOREIGN KEY (cod_attuatore) References Attuatore (code) on delete cascade on update cascade,
 primary key(comando,cod_attuatore)
+);
+
+create table Misure (
+misura float NOT NULL,
+code int,
+time varchar(40),
+ID int NOT NULL PRIMARY KEY AUTO_INCREMENT,
+FOREIGN KEY (code) References Sensore (code) on delete cascade on update cascade
 );
 
 

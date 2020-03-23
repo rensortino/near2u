@@ -13,9 +13,11 @@
 
 
 	Controller* Controller::getIstance(){
-		if (!instance)
-      		instance = new Controller;
-      return instance;
+		if (!instance){
+			instance = new Controller;
+		}
+		return instance;
+      		
 
 	}
 
